@@ -22,7 +22,7 @@
 	},
 	"bin": [
 		"bin/compile",
-		"bin/closure/compiler.jar"
+		"bin/closure.bat"
 	],
 	
 	"scripts": {

@@ -595,7 +595,7 @@ class Compiler {
 		$command = (implode(' ', $command));
 		
 		// run
-		echo "\n`$command`\n";
+		// echo "\n`$command`\n";
 		exec($command);
 		
 		return $this;
@@ -607,16 +607,18 @@ class Compiler {
 	 * @param boolean $rmdir remove directory also?
 	 */
 	private static function wipeDir($dir, $rmdir = false) {
-		$it = new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS);
-		$files = new \RecursiveIteratorIterator($it, \RecursiveIteratorIterator::CHILD_FIRST);
-		foreach($files as $file) 
-			if ($file->isDir())
-				rmdir($file->getRealPath());
-			else
-				unlink($file->getRealPath());
-			
-		if($rmdir)
-			rmdir ($dir);
+		if(file_exists($dir)) {
+			$it = new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS);
+			$files = new \RecursiveIteratorIterator($it, \RecursiveIteratorIterator::CHILD_FIRST);
+			foreach($files as $file) 
+				if ($file->isDir())
+					rmdir($file->getRealPath());
+				else
+					unlink($file->getRealPath());
+				
+			if($rmdir)
+				rmdir ($dir);
+		}
 	}
 	
 	/**

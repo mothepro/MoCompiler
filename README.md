@@ -35,5 +35,12 @@ Move files from local machine to server
 		
 ####Composer Packages for Compression & Uploading
 * tpyo/amazon-s3-php-class
+<<<<<<< HEAD
 * ps/image-optimizer
 * apigen/apigen
+=======
+* tedivm/jshrink
+* ps/image-optimizer
+* apigen/apigen
+* packagist/closure
+>>>>>>> origin/master
