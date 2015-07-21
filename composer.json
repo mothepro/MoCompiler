@@ -1,6 +1,6 @@
 {
-    "name": "mothepro/mo-engine",
-    "description": "Simple OOP classes that help me out",
+    "name": "mothepro/mo-compiler",
+    "description": "Move files from local machine to server",
     "license": "MIT",
     "authors": [
         {
@@ -14,7 +14,6 @@
 		"tpyo/amazon-s3-php-class":			"*",
 		"packagist/closurecompiler-bin":	"*",
 		"ps/image-optimizer":				"*",
-		
 		"apigen/apigen":					"^4.1"
 	},
 	"autoload": {
@@ -23,7 +22,8 @@
 		}
 	},
 	"bin": [
-		"bin/compile"
+		"bin/compile",
+		"bin/closure/compiler.jar"
 	],
 	
 	"scripts": {
