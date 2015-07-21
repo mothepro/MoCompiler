@@ -1,1 +1,0 @@
-java -jar "closure\\compiler.jar" %*

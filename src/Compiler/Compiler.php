@@ -191,6 +191,7 @@ class Compiler {
 	 */
 	private $compress = false;
 	// </editor-fold>
+	private static $bin = 'vendor'. DIRECTORY_SEPARATOR .'bin'. DIRECTORY_SEPARATOR;
 
 	/**
 	 * Report current action being taken
@@ -298,7 +299,7 @@ class Compiler {
 		$this->wipe[] = $dest;
 		
 		$this	->start('Creating Documentation from ' . $this->localDoc)
-				->runLocal(['vendor/bin/apigen',
+				->runLocal([self::$bin . 'apigen.bat',
 					'generate',
 					'--config', $this->localDoc,
 				])
@@ -396,10 +397,7 @@ class Compiler {
 					fclose($f);
 					*/
 					
-					$this->runLocal(['java',
-							'-jar',
-							'vendor'. DIRECTORY_SEPARATOR .'bin'. DIRECTORY_SEPARATOR .'closure'. DIRECTORY_SEPARATOR .'compiler.jar',
-						
+					$this->runLocal([self::$bin . 'closure.bat',
 							'--language_in', 'ECMASCRIPT5',
 							'--js_output_file',  $output,
 							$v . DIRECTORY_SEPARATOR . '**',
