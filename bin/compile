@@ -7,10 +7,8 @@ Mo's PHP Project Compiler!
 
 	Composer Packages for Compression & Uploading
 		tpyo/amazon-s3-php-class
-		tedivm/jshrink
 		ps/image-optimizer
 		apigen/apigen
-		packagist/closure
 
 	Required Options
 		-c		Configuration file to use
