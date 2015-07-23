@@ -67,16 +67,16 @@ class Constants {
 				
 			// global
 			if(!is_array($val)) {
-				$this->global[ $name ] = \Nette\Neon\Neon::encode($val);
+				$this->global[ $name ] = $val;
 			} else {
 			
 			// class const
 			//	list($const, $val) = self::classConst($val);
 				foreach ($val as $mem => $v)
-				$this->class[ $name ][ $mem ] = \Nette\Neon\Neon::encode($v);
+				$this->class[ $name ][ $mem ] = $v;
 			}
 		}
-		
+
 		// public const
 		if(isset($const['public'])) {
 			foreach($const['public'] as $name) {
@@ -84,14 +84,14 @@ class Constants {
 				
 				// global const
 				if(count($names) === 1)
-					$this->public[ $names[0] ] = $this->global[ $names[0] ];
+					$this->public[ $name ] = $this->global[ $names[0] ];
 				
 				// class
-				elseif(count($names[0]) === 2)
+				elseif(count($names) === 2)
 					$this->public[ $name ] = $this->class[ $names[0] ][ $names[1] ];
 				
 				// class with underscore
-				elseif(count($names[0]) === 3)
+				elseif(count($names) === 3)
 					$this->public[ $name ] = $this->class[ $names[0] ][ $names[1] ][ $names[2] ];
 				
 				/**
@@ -111,21 +111,35 @@ class Constants {
 	}
 	
 	public function write($location, $requireAutoloader = false) {
-		$str[] = array('<?php');
+		$str = array('<?php');
 		
 		if($requireAutoloader)
 			$str[] = self::AUTOLOAD;
 		
 		foreach($this->global as $name => $val)
-			$str[] = 'define("'. strtoupper($name) .'", '. $val .');';
+			$str[] = 'define("'. strtoupper($name) .'", '. self::encode($val) .');';
 		
 		foreach($this->class as $class => $tmp) {
 			$str[] = 'abstract class '. strtoupper($class) .' {';
 			foreach($tmp as $name => $val)
-				$str[] = 'const '. strtoupper ($name) .' = '. $val .';';
+				$str[] = 'const '. strtoupper ($name) .' = '. self::encode($val) .';';
+			$str[] = '}';
 		}
 		
+		$str[] = '$__PUBLIC_CONST = '. var_export($this->public, true).';';
+		//foreach($this->global as $name => $val)
+		//	$str[] = 'define("'. strtoupper($name) .'", '. $val .');';
+		
 		return file_put_contents($location, implode(PHP_EOL, $str));
+	}
+	
+	protected static function encode($val) {
+		$ret = json_encode($val);
+				
+		if($val instanceof \Nette\Neon\Entity)
+			$ret = \Nette\Neon\Neon::encode($val);
+				
+		return $ret;
 	}
 
 	/**

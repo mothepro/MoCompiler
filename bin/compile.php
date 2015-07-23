@@ -34,33 +34,33 @@ Mo's PHP Project Compiler!
 	-h		--help	Print this help message.
 
 	Required Options
-		-c		Configuration file to use
-		-s		Host name of server to compile to
-		-p		Location of PPK file to connect to server
-		-d		Remote Directory to upload project
+		-c						Configuration file to use
+		-s	--host				Host name of server to compile to
+		-p	--ppk				Location of PPK file to connect to server
+		-d	--project-remote	Remote Directory to upload project
 
 	Optional Options
 	
-		-l				Local Directory to load project [Working Directory]
+		-l	--project-local		Local Directory to load project [Working Directory]
 		
-		--upload		Directories to move from local to remote
+			--upload			Directories to move from local to remote
 
-		--twig			Twig Template Directory
-		--apigen		Documentation Configuration
+			--twig				Twig Template Directory
+			--apigen			Documentation Configuration
 
-		--compress		Compress static files
-		--quiet			Silent mode
+			--compress			Compress static files
+			--quiet				Silent mode
 
-		--local-sass	Local SASS Directory
-		--local-js		Local JS Directory
-		--local-img		Local Image Directory
+			--local-sass		Local SASS Directory
+			--local-js			Local JS Directory
+			--local-img			Local Image Directory
 
-		--s3-key		Amazon S3 Access Key Activates compression
-		--s3-secret		Amazon S3 Secret Key
+			--s3-key			Amazon S3 Access Key Activates compression
+			--s3-secret			Amazon S3 Secret Key
 
-		--remote-sass	Remote Directory to save sass on server or S3
-		--remote-js		Remote Directory to save js on server or S3
-		--remote-img	Remote Directory to save images on server or S3
+			--remote-sass		Remote Directory to save sass on server or S3
+			--remote-js			Remote Directory to save js on server or S3
+			--remote-img		Remote Directory to save images on server or S3
 
 	Composer Packages for Compression & Uploading
 		tpyo/amazon-s3-php-class
@@ -88,7 +88,7 @@ function check($name) {
 			if(empty($args))
 				$ret = $config[$name];
 			else
-				$def($config[$name], $args);
+				$ret = $def($config[$name], $args);
 		}
 		
 		return $ret;
@@ -124,6 +124,10 @@ $error = true;
 $neon = null;
 $opt = getopt('c:s:p:l:d:h', [
 	'help',
+	
+	'host',
+	'ppk',
+	'project-remote',
 
 	'compress',
 	'quiet',
@@ -150,21 +154,22 @@ if(isset($opt['c'])) {
 		$neon = $neon['compiler'];
 	
 	// move legacy cmd line options
-	if(isset($opt['s']))	$opt['host']	= $opt['s'];
-	if(isset($opt['p']))	$opt['ppk']		= $opt['p'];
-	if(isset($opt['d']))	$opt['remote']	= $opt['d'];
-	if(isset($opt['l']))	$opt['project']	= $opt['l'];
+	if(isset($opt['s']))	replace($neon, 'host', $opt['s']);
+	if(isset($opt['p']))	replace($neon, 'ppk', $opt['p']);
+	if(isset($opt['d']))	replace($neon, 'project-remote', $opt['d']);
+	if(isset($opt['l']))	replace($neon, 'project-local', $opt['l']);
 
 	// overwrite neon with cmd line opts
 	if(!is_array($neon))
 		$neon = array();
 
 	// replace $neon[ $name ] with $val
+	unset($opt['c']);
 	foreach($opt as $name => $val)
 		replace($neon, $name, $val);
 
 	//  check errors
-	$error = (empty($neon) || !isset($neon['s']) || !isset($neon['p']) || !isset($neon['d']));
+	$error = !check('ppk') || !check('project', 'remote') || !check('host');
 }
 
 // error OR just needs a little help
@@ -179,6 +184,7 @@ if($error || isset($opt['h']) || isset($opt['help'])) {
 if(check('constants') && check('constantOutput')) {
 	$c = new Mo\Compiler\Constants(check('constants'));
 	$c->write(check('constantOutput'), true);
+	require check('constantOutput');
 }
 
 // start the compiler

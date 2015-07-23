@@ -180,7 +180,7 @@ class Compiler {
 	/**
 	 * Vendor binary folder
 	 */
-	const BIN = 'vendor/bin/';// 'vendor'. DIRECTORY_SEPARATOR .'bin'. DIRECTORY_SEPARATOR;
+	const BIN = 'vendor\\bin\\';// 'vendor'. DIRECTORY_SEPARATOR .'bin'. DIRECTORY_SEPARATOR;
 	// </editor-fold>
 
 	// <editor-fold defaultstate="collapsed" desc="Status">
@@ -405,9 +405,12 @@ class Compiler {
 
 	/**
 	 * Combines SASS to a file foreach folder
+	 * 
+	 * @global string[] $__PUBLIC_CONST list of constants to be used
 	 * @param boolean $compress compress the sass
 	 */
 	private function sass($compress = false) {
+		global $__PUBLIC_CONST;
 		//self::wipeDir($this->localStatic . 'css');
 		
 		// get all sass dirs
@@ -431,12 +434,11 @@ class Compiler {
 
 				// get the URL Constants
 				$urls = array();
-				$class = new \ReflectionClass('\URL');
-				foreach ($class->getConstants() as $name => $val)
-					$urls[] = '$url-' . strtolower($name) . ': \'' . $val . '\' !default;' . PHP_EOL; // $bootstrap-sass-asset-helper: (function-exists(twbs-font-path)) !default;
+				foreach ($__PUBLIC_CONST as $name => $val)
+					$urls[] = '$' . strtolower(str_replace('.', '-', $name)) . ': \'' . $val . '\' !default;' . PHP_EOL; // $bootstrap-sass-asset-helper: (function-exists(twbs-font-path)) !default;
 
 					
-// add URL vars to temp sass file
+				// add URL vars to temp sass file
 				fwrite($f, implode($urls));
 				fwrite($f, file_get_contents($file));
 
