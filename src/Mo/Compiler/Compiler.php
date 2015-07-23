@@ -428,7 +428,7 @@ class Compiler {
 
 
 				// sass which will actuall be compiled [hidden]
-				$input = $file . md5(time()) . '.scss';
+				$input = $file . md5(time()) . '.sex';
 				$f = fopen($input, 'w');
 				exec('attrib +H ' . escapeshellarg($input));
 
@@ -635,6 +635,7 @@ class Compiler {
 // </editor-fold>
 
 	/**
+	 * @todo more control over static dirs
 	 * Uploads to S3 or remote server
 	 */
 	protected function upload() {

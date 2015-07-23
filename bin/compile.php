@@ -169,7 +169,7 @@ if(isset($opt['c'])) {
 		replace($neon, $name, $val);
 
 	//  check errors
-	$error = !check('ppk') || !check('project', 'remote') || !check('host');
+	$error = !(check('ppk') && check('project', 'remote') && check('host'));
 }
 
 // error OR just needs a little help
@@ -227,9 +227,9 @@ if(check('s3', 'key') && check('s3', 'key'))
 	);
 
 // remote
-if(check('remote-sass'))	$c->setRemoteSASS(check('remote-sass'));
-if(check('remote-js'))		$c->setRemoteJS(check('remote-js'));
-if(check('remote-img'))		$c->setRemoteImage(check('remote-img'));
+if(check('remote', 'sass'))	$c->setRemoteSASS(check('remote', 'sass'));
+if(check('remote', 'js'))	$c->setRemoteJS(check('remote', 'js'));
+if(check('remote', 'img'))	$c->setRemoteImage(check('remote', 'img'));
 
 // start
 $c->compile();
