@@ -20,7 +20,7 @@ class Compiler {
 	];
 	
 	/**
-	 * Private Putty Key fule
+	 * Private Putty Key file
 	 * @var string
 	 */
 	private $ppk;

@@ -120,7 +120,10 @@ $opt = getopt('c:s:p:l:d:h', [
 if(isset($opt['c'])) {
 	$data = file_get_contents($opt['c']);
 	$neon = \Nette\Neon\Neon::decode($data);
-
+	
+	if(isset($neon['compiler']))
+		$neon = $neon['compiler'];
+	
 	// move legacy cmd line options
 	if(isset($opt['s']))	$opt['host']	= $opt['s'];
 	if(isset($opt['p']))	$opt['ppk']		= $opt['p'];
