@@ -12,13 +12,12 @@
 		"php": ">=5.3.0",
 		
 		"tpyo/amazon-s3-php-class":			"*",
-		"ps/image-optimizer":				"*",
 		"apigen/apigen":					"^4.1",
 		"nette/neon":						"*"
 	},
 	"autoload": {
 		"psr-0": {
-			"Compiler": "src/"
+			"Mo": "src/"
 		}
 	},
 	"bin": [
@@ -27,6 +26,6 @@
 	],
 	
 	"scripts": {
-		"pre-install-cmd": "\\Compiler\\Compiler::checkBinaries"
+		"pre-install-cmd": "\\Mo\\Compiler\\Compiler::checkBinaries"
 	}
 }
