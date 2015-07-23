@@ -1,6 +1,30 @@
 <?php
 require 'vendor/autoload.php';
 
+/*
+ * The MIT License
+ *
+ * Copyright 2015 Mo.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 /**
  * Giv'em some help
  */
@@ -94,7 +118,8 @@ function replace(&$origin, $name, $newValue) {
 set_time_limit(0);
 date_default_timezone_set('UTC');
 error_reporting(-1);
-
+$error = true;
+	
 // options
 $neon = null;
 $opt = getopt('c:s:p:l:d:h', [
@@ -134,18 +159,13 @@ if(isset($opt['c'])) {
 	if(!is_array($neon))
 		$neon = array();
 
-	print_r($neon);
-
 	// replace $neon[ $name ] with $val
 	foreach($opt as $name => $val)
 		replace($neon, $name, $val);
 
-	print_r($neon);
-
 	//  check errors
 	$error = (empty($neon) || !isset($neon['s']) || !isset($neon['p']) || !isset($neon['d']));
-} else
-	$error = true;
+}
 
 // error OR just needs a little help
 if($error || isset($opt['h']) || isset($opt['help'])) {
@@ -154,26 +174,44 @@ if($error || isset($opt['h']) || isset($opt['help'])) {
 	help();
 	exit($error);
 }
-exit;
+
+// make the constant
+if(check('constants') && check('constantOutput')) {
+	$c = new Mo\Compiler\Constants(check('constants'));
+	$c->write(check('constantOutput'), true);
+}
+
+// start the compiler
 $c = new Mo\Compiler\Compiler;
 $c	->setHost(check('host'))
 	->setPpk(check('ppk'))
-	->setRemote(check('remote'));
+	->setRemote(check('project', 'remote'));
 
 // misc
 $c->setCompress(check('compress'));
 $c->setSilent(check('silent'));
 
 // add directories
-if(check('local', 'sass'))	foreach(check('local', 'sass')	as $dir)	$c->addSASS($dir);
-if(check('local', 'js'))	foreach(check('local', 'js') 	as $dir)	$c->addJS($dir);
-if(check('local', 'img'))	foreach(check('local', 'img') 	as $dir)	$c->addImage($dir);
-if(check('upload'))			foreach(check('upload') 		as $dir)	$c->addMove($dir);
+if(check('local', 'sass'))	
+	foreach(check('local', 'sass')	as $dir)
+		$c->addSASS($dir);
+
+if(check('local', 'js'))	
+	foreach(check('local', 'js') 	as $dir)
+		$c->addJS($dir);
+
+if(check('local', 'img'))
+	foreach(check('local', 'img') 	as $dir)
+		$c->addImage($dir);
+
+if(check('upload'))
+	foreach(check('upload') 		as $dir)
+		$c->addMove($dir);
 
 // misc
-if(check('project'))	$c->setLocal(check('project'));
-if(check('twig'))		$c->setLocalTpl(check('twig'));
-if(check('apigen'))		$c->setLocalDoc(check('apigen'));
+if(check('project', 'local'))	$c->setLocal(check('project', 'local'));
+if(check('twig'))				$c->setLocalTpl(check('twig'));
+if(check('apigen'))				$c->setLocalDoc(check('apigen'));
 
 // S3
 if(check('s3', 'key') && check('s3', 'key'))
