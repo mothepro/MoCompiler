@@ -183,7 +183,7 @@ class Compiler {
 	const BIN = 'vendor\\bin\\';// 'vendor'. DIRECTORY_SEPARATOR .'bin'. DIRECTORY_SEPARATOR;
 	// </editor-fold>
 
-	// <editor-fold defaultstate="collapsed" desc="Status">
+	// <editor-fold defaultstate="collapsed" desc="Reporting">
 	/**
 	 * Report current action being taken
 	 * @param string $message
@@ -197,13 +197,13 @@ class Compiler {
 
 
 		if (!$this->silent)
-			echo PHP_EOL, str_repeat("\t", $this->status->count() - 1), $message, PHP_EOL;
+			echo PHP_EOL, str_repeat("\t", $this->status->count() - 1), $message;
 
 
 		return $this;
 	}
 
-		/**
+	/**
 	 * Finish report
 	 */
 	private function finish() {
@@ -212,7 +212,7 @@ class Compiler {
 
 
 		if (!$this->silent)
-			echo str_repeat("\t", $this->status->count()), '   ', number_format($end - $begin, 4), ' seconds';
+			echo PHP_EOL, str_repeat("\t", $this->status->count()), '   ', number_format($end - $begin, 4), ' seconds';
 
 
 		return $this;
