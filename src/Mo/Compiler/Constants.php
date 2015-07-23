@@ -27,6 +27,7 @@ namespace Mo\Compiler;
 
 /**
  * Converts array of constants to a PHP file of constants
+ * @todo support for recursive class constant member names
  *
  * @author Maurice Prosper <maurice.prosper@ttu.edu>
  */
@@ -59,45 +60,40 @@ class Constants {
 	 * Autoloading in PHP
 	 */
 	const AUTOLOAD = 'require "vendor/autoload.php";';
+	
+	/**
+	 * Public Modifier Prefix
+	 */
+	const PUB_PREFIX = '+';
 
 	public function __construct(array $const) {
 		foreach ($const as $name => $val) {
-			if($name === 'public')
-				continue;
-				
+			// make public?
+			$pub = substr($name, 0, strlen(self::PUB_PREFIX)) === self::PUB_PREFIX;
+			if($pub)
+				$name = substr($name, 1);
+			
 			// global
 			if(!is_array($val)) {
 				$this->global[ $name ] = $val;
-			} else {
-			
+				
+				if($pub)
+					$this->public[ $name ] = $this->global[ $name ];
 			// class const
-			//	list($const, $val) = self::classConst($val);
-				foreach ($val as $mem => $v)
-				$this->class[ $name ][ $mem ] = $v;
-			}
-		}
-
-		// public const
-		if(isset($const['public'])) {
-			foreach($const['public'] as $name) {
-				$names = explode('.', $name);
+			} else { 
+				foreach ($val as $mem => $v) {
+					// make member public?
+					if(substr($mem, 0, strlen(self::PUB_PREFIX)) === self::PUB_PREFIX) {
+						$mem = substr($mem, 1);
+						$this->public[ $name ][ $mem ] = $v
+					}
+					
+					$this->class[ $name ][ $mem ] = $v;
+				}
 				
-				// global const
-				if(count($names) === 1)
-					$this->public[ $name ] = $this->global[ $names[0] ];
-				
-				// class
-				elseif(count($names) === 2)
-					$this->public[ $name ] = $this->class[ $names[0] ][ $names[1] ];
-				
-				// class with underscore
-				elseif(count($names) === 3)
-					$this->public[ $name ] = $this->class[ $names[0] ][ $names[1] ][ $names[2] ];
-				
-				/**
-				 * not in the mood to write more, sorry :'[
-				 * @todo support recursive class
-				 */
+				// make entire class public
+				if($pub)
+					$this->public[ $name ] = $this->class[ $name ];
 			}
 		}
 	}
@@ -126,11 +122,12 @@ class Constants {
 			$str[] = '}';
 		}
 		
-		$str[] = '$__PUBLIC_CONST = '. var_export($this->public, true).';';
+		// how should I do this?
+		$str[] = '$_GLOBALS["constants"] = '. var_export($this->public, true).';';
 		//foreach($this->global as $name => $val)
 		//	$str[] = 'define("'. strtoupper($name) .'", '. $val .');';
 		
-		return file_put_contents($location, implode(PHP_EOL, $str));
+		return file_put_contents($location, implode(' ', $str));
 	}
 	
 	protected static function encode($val) {
