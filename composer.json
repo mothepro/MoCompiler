@@ -13,7 +13,8 @@
 		
 		"tpyo/amazon-s3-php-class":			"*",
 		"ps/image-optimizer":				"*",
-		"apigen/apigen":					"^4.1"
+		"apigen/apigen":					"^4.1",
+		"nette/neon":						"*"
 	},
 	"autoload": {
 		"psr-0": {

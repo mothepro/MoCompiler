@@ -1,49 +1,11 @@
 <?php
-namespace Compiler;
+namespace Mo\Compiler;
+
 /**
- * Compiles a project
- *
- * Mo's PHP Project Compiler!
- * 
- * 	Composer Packages for Compression & Uploading
- * 		tpyo/amazon-s3-php-class
- * 		tedivm/jshrink
- * 		ps/image-optimizer
- * 		apigen/apigen
- *		packagist/closure
- *
- * 	Required Options
- * 		-c		Configuration file to use
- * 		-s		Host name of server to compile to
- * 		-p		Location of PPK file to connect to server
- * 		-l		Local Directory to load project
- * 		-d		Remote Directory to upload project
- * 
- * 	Optional Options
- * 		-h		--help	Print this help message.
- * 		--upload		Directories to move from local to remote
- * 
- * 		--twig			Twig Template Directory
- * 		--apigen		Documentation Configuration
- * 
- * 		--compress		Compress static files
- * 		--quiet			Silent mode
- * 
- * 		--local-sass	Local SASS Directory
- * 		--local-js		Local JS Directory
- * 		--local-img		Local Image Directory
- * 
- * 		--s3-key		Amazon S3 Access Key Activates compression
- * 		--s3-secret		Amazon S3 Secret Key
- * 
- * 		--remote-sass	Remote Directory to save sass on server or S3
- * 		--remote-js		Remote Directory to save js on server or S3
- * 		--remote-img	Remote Directory to save images on server or S3
- *
- * @author Maurice Prosper <maurice.prosper@ttu.edu>
+ * Class which compiles the config and gets it ready to be pushed live
  */
 class Compiler {
-	// <editor-fold defaultstate="collapsed" desc="properties">
+	// <editor-fold defaultstate="collapsed" desc="Properties">
 	/**
 	 * Needed binaries
 	 * @var string[]
@@ -190,38 +152,51 @@ class Compiler {
 	 * @var boolean
 	 */
 	private $compress = false;
+	
+	/**
+	 * Vendor binary folder
+	 */
+	const BIN = 'vendor/bin/';// 'vendor'. DIRECTORY_SEPARATOR .'bin'. DIRECTORY_SEPARATOR;
 	// </editor-fold>
-	private static $bin = 'vendor'. DIRECTORY_SEPARATOR .'bin'. DIRECTORY_SEPARATOR;
 
+	// <editor-fold defaultstate="collapsed" desc="Status">
 	/**
 	 * Report current action being taken
 	 * @param string $message
 	 */
 	private function start($message) {
-		if(!isset($this->status))
+		if (!isset($this->status))
 			$this->status = new \SplStack;
-		
+
+
 		$this->status->push(microtime(true));
-		
-		if(!$this->silent)
-			echo PHP_EOL, str_repeat("\t", $this->status->count()-1), $message, '    ';
-		
+
+
+		if (!$this->silent)
+			echo PHP_EOL, str_repeat("\t", $this->status->count() - 1), $message, PHP_EOL;
+
+
 		return $this;
 	}
-	
-	/**
+
+		/**
 	 * Finish report
 	 */
 	private function finish() {
 		$begin = $this->status->pop();
 		$end = microtime(true);
-		
-		if(!$this->silent)
-			echo PHP_EOL, str_repeat("\t", $this->status->count()), ' - ', number_format($end - $begin, 4), 's';
-		
+
+
+		if (!$this->silent)
+			echo str_repeat("\t", $this->status->count()), '   ', number_format($end - $begin, 4), ' seconds';
+
+
 		return $this;
 	}
 
+// </editor-fold>
+	
+	// <editor-fold defaultstate="collapsed" desc="Directory Methods">
 	/**
 	 * Recursively gets files in path
 	 * @param string $pattern
@@ -230,11 +205,12 @@ class Compiler {
 	 */
 	protected final static function rglob($pattern, $flags = 0) {
 		$files = glob($pattern, $flags);
-		foreach (glob(dirname($pattern) . DIRECTORY_SEPARATOR .'*', GLOB_ONLYDIR | GLOB_NOSORT) as $dir)
+		foreach (glob(dirname($pattern) . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR | GLOB_NOSORT) as $dir)
 			$files = array_merge(self::rglob($dir . DIRECTORY_SEPARATOR . basename($pattern), $flags), $files);
 		return $files;
 	}
-	
+
+
 	/**
 	 * Full file name with trailing directory separator is a folder
 	 * @param type $name
@@ -243,47 +219,139 @@ class Compiler {
 	protected final static function path($name) {
 		return rtrim(realpath($name), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
 	}
-	
+
+
 	/**
 	 * Makes all directories leading up to given file or folder
 	 * @param string $dir path
 	 * @return boolean successful
 	 */
 	protected final static function readyDir($dir) {
-		if(!is_dir(dirname($dir)))
+		if(is_file($dir))
+			return false;
+		
+		if (!is_dir(dirname($dir)))
 			return mkdir(dirname($dir), 0777, true);
-		else return true;
+		
+		return true;
 	}
 
+
+	/**
+	 * Remove everything in a directory
+	 * @param string $dir directiory to wipe
+	 * @param boolean $rmdir remove directory also?
+	 */
+	protected final static function wipeDir($dir, $rmdir = false) {
+		if (file_exists($dir)) {
+			$it = new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS);
+			$files = new \RecursiveIteratorIterator($it, \RecursiveIteratorIterator::CHILD_FIRST);
+			foreach ($files as $file)
+
+				if ($file->isDir())
+					rmdir($file->getRealPath());
+				else
+					unlink($file->getRealPath());
+
+
+			if ($rmdir)
+				rmdir($dir);
+		}
+	}
+
+// </editor-fold>
+	
+	// <editor-fold defaultstate="collapsed" desc="Testing">
+
+	/**
+	 * Determines if a command exists on the current environment
+	 *
+	 * @link http://stackoverflow.com/a/18540185
+	 * @param string $command The command to check
+	 * @return bool True if the command has been found ; otherwise, false.
+	 */
+	private static function commandExists($command) {
+		$whereIsCommand = (PHP_OS == 'WINNT') ? 'where' : 'which';
+		$process = proc_open("$whereIsCommand $command", [
+			0 => array("pipe", "r"), //STDIN
+			1 => array("pipe", "w"), //STDOUT
+			2 => array("pipe", "w"), //STDERR
+				], $pipes);
+
+		if ($process !== false) {
+			$stdout = stream_get_contents($pipes[1]);
+			$stderr = stream_get_contents($pipes[2]);
+			fclose($pipes[1]);
+			fclose($pipes[2]);
+			proc_close($process);
+
+			return $stdout != '';
+		}
+
+		return false;
+	}
+
+
+	/**
+	 * Makes sure all binaries are on system
+	 * @param \Composer\Script\Event $event
+	 * @throws Exception
+	 */
+	public static function checkBinaries(\Composer\Script\Event $event) {
+		foreach (self::$binaries as $cmd) {
+			if (!self::commandExists($cmd))
+				throw new \Exception('Binary "' . $cmd . '" not found in PATH');
+
+			// $event->getIO()->write($cmd . ' found.');
+		}
+	}
+
+// </editor-fold>
+
+	// <editor-fold defaultstate="collapsed" desc="Generate">
+
+	/**
+	 * Make Twig Templates in Javascript
+	 * 
+	 * Makes JS files in current directory then moves them to static JS
+	 */
 	private function makeTpl() {
 		$this->start('Creating JS Templates from ' . $this->localTpl);
 
-		// fix path
-		$lpath = self::path($this->localTpl); // C:\...\tpl\
-		$output = self::path(sys_get_temp_dir()) . 'twigjs' . time() . DIRECTORY_SEPARATOR; // C:\tmp\...\twigjs\
+		$this->wipe[] = $output = self::path(sys_get_temp_dir()) . 'twigjs' . time() . DIRECTORY_SEPARATOR;
+		$cwd = getcwd();
 
-		foreach(self::rglob($lpath . '*.twig') as $file) {
-			$rel	= $this->localTpl . DIRECTORY_SEPARATOR . substr($file, strlen($lpath)); // tpl\*.twig
 
-			self::readyDir($output . $rel);
-			
-			$this->runLocal(['twigjs',
-				$rel,
-				//'--output', rtrim($output, DIRECTORY_SEPARATOR)
-				// for some reason the twigjs compiler can't make dir's
-				// doesn't work at all
-			]);
+		foreach (self::rglob($this->localTpl . '*.twig') as $file) {
+			// go directly to file
+			chdir(dirname($file));
+
+
+			// output flag doesn't work
+			$this->runLocal(['twigjs', basename($file)]);
 		}
-		
-		foreach(self::rglob($lpath . '*.js') as $file)
-			rename($file, $output . substr($file, strlen(getcwd())));
+
+
+		chdir($cwd);
+
+
+		// prepare the dir and move js files there
+		foreach (self::rglob($this->localTpl . '*.js') as $file) {
+			$outFile = $output . substr($file, strlen($cwd));
+
+
+			self::readyDir($outFile);
+			rename($file, $outFile);
+		}
 
 		$this->finish();
-		
+
+
 		$this->addJS($output);
 		$this->addMove($this->localTpl);
 	}
-	
+
+
 	/**
 	 * Make Documentation for site
 	 */
@@ -297,34 +365,41 @@ class Compiler {
 		// wipe before and after
 		self::wipeDir($dest, true);
 		$this->wipe[] = $dest;
-		
-		$this	->start('Creating Documentation from ' . $this->localDoc)
-				->runLocal([self::$bin . 'apigen.bat',
+
+
+		$this->start('Creating Documentation from ' . $this->localDoc)
+				->runLocal([self::BIN . 'apigen.bat',
 					'generate',
 					'--config', $this->localDoc,
 				])
 				->finish();
 	}
 
+// </editor-fold>
+
+	// <editor-fold defaultstate="collapsed" desc="Convert">
+
 	/**
 	 * Combines SASS to a file foreach folder
 	 * @param boolean $compress compress the sass
 	 */
-	private function sass($compress) {
+	private function sass($compress = false) {
 		//self::wipeDir($this->localStatic . 'css');
 		
 		// get all sass dirs
-		foreach($this->localSASS as $dir) {
-			$this->start('Converting SASS to CSS in '. $dir);
-		
-			foreach(glob($dir . DIRECTORY_SEPARATOR . '*.scss') as $file) {
+		foreach ($this->localSASS as $dir) {
+			$this->start('Converting SASS to CSS in ' . $dir);
+
+
+			foreach (glob($dir . DIRECTORY_SEPARATOR . '*.scss') as $file) {
 				//skip if partial
 				$output = basename($file);
-				if(substr($output, 0, 1) === '_')
+				if (substr($output, 0, 1) === '_')
 					continue;
 
 				$this->start('Working on ' . $output);
-			
+
+
 				// sass which will actuall be compiled [hidden]
 				$input = $file . md5(time()) . '.scss';
 				$f = fopen($input, 'w');
@@ -333,10 +408,11 @@ class Compiler {
 				// get the URL Constants
 				$urls = array();
 				$class = new \ReflectionClass('\URL');
-				foreach($class->getConstants() as $name => $val)
+				foreach ($class->getConstants() as $name => $val)
 					$urls[] = '$url-' . strtolower($name) . ': \'' . $val . '\' !default;' . PHP_EOL; // $bootstrap-sass-asset-helper: (function-exists(twbs-font-path)) !default;
 
-				// add URL vars to temp sass file
+					
+// add URL vars to temp sass file
 				fwrite($f, implode($urls));
 				fwrite($f, file_get_contents($file));
 
@@ -346,85 +422,89 @@ class Compiler {
 
 				// make sure path is ready
 				self::readyDir($output);
-				
+
+
 				// run sass
 				$this->runLocal(['sass',
 					'--scss',
 					'--trace',
 					'--unix-newlines',
-
-					'--style',
-						($compress ? 'compressed --sourcemap=none' : 'expanded -l'),
-
-					$input,
+										'--style',
+					($compress ? 'compressed --sourcemap=none' : 'expanded -l'),
+										$input,
 					$output,
 				]);
 
 				fclose($f);
 				unlink($input);
-				
+
+
 				$this->finish();
 			}
-			
+
+
 			$this->finish();
 		}
 	}
-	
+
+
 	/**
 	 * Merges all files
 	 * @param boolean $compress
 	 */
 	private function javascript($compress = false) {
-		foreach($this->localJS as $jswip) {
+		foreach ($this->localJS as $jswip) {
 			// make file for each sub folder
-			foreach (glob($jswip .DIRECTORY_SEPARATOR. '*', GLOB_ONLYDIR) as $v) {
-				if($compress) {
+			foreach (glob($jswip . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) as $v) {
+				if ($compress) {
 					$output = $this->localStaticJS . basename($v) . '.js';
 					self::readyDir($output);
-					
-					$this->start('Minifing '. basename($v) .' with closure');
-					
-					/*
-					foreach (self::rglob($v . DIRECTORY_SEPARATOR . '*.js') as $vv) 
-						$f = fopen($output, 'a');
-						ob_start();
-						require $vv;
-						$data = ob_get_clean();
 
-						// add to file
-						fwrite($f, $file);
-					}
-					fclose($f);
+
+					$this->start('Minifing ' . basename($v) . ' with closure');
+
+
+					/*
+					  foreach (self::rglob($v . DIRECTORY_SEPARATOR . '*.js') as $vv) 
+					  $f = fopen($output, 'a');
+					  ob_start();
+					  require $vv;
+					  $data = ob_get_clean();
+
+					  // add to file
+					  fwrite($f, $file);
+					  }
+					  fclose($f);
 					*/
-					
-					$this->runLocal([self::$bin . 'closure.bat',
-							'--language_in', 'ECMASCRIPT5',
-							'--js_output_file',  $output,
-							$v . DIRECTORY_SEPARATOR . '**',
-						]);
-					
+
+
+					$this->runLocal([self::BIN . 'closure.bat',
+						'--language_in', 'ECMASCRIPT5',
+						'--js_output_file', $output,
+						$v . DIRECTORY_SEPARATOR . '**',
+					]);
+
+
 					$this->finish();
 				} else {
-					$this->start('Merging '. basename($v) .'\'s JS files');
+					$this->start('Merging ' . basename($v) . '\'s JS files');
 
-					$full = $this->localStaticJS . basename($v) .'.js';
+					$full = $this->localStaticJS . basename($v) . '.js';
 
 					//remove compiled file
-					if(is_file($full))
+					if (is_file($full))
 						unlink($full);
 
 					// append to new js file
 					self::readyDir($full);
 					$f = fopen($full, 'a'); //match with $g!
-
-					// get js files
+										// get js files
 					$g = self::rglob($v . DIRECTORY_SEPARATOR . '*.js');
 
 					// add js files
 					foreach ($g as $vv) {
 						//$this->start('Adding in '. basename($vv) .' to '. basename($v));
-
-						// start buffer
+												// start buffer
 						ob_start();
 
 						// nice title
@@ -447,54 +527,91 @@ class Compiler {
 				}
 			}
 		}
-		
-		/**
-		 * Overwrites JS files with its minified self
-		 */
-		if($compress) {
-		}
 	}
-	
+
+
 	/**
 	 * Move images to upload dir
 	 * Optimize them if needed
 	 * @param boolean $compress
 	 */
-	private function images($compress = false) {
-		foreach($this->localImage as $imgDir) {
+	protected function images($compress = false) {
+		foreach ($this->localImage as $imgDir) {
 			//if(is_file($imgDir . DIRECTORY_SEPARATOR . 'Thumbs.db'))
 			//	unlink($imgDir . DIRECTORY_SEPARATOR . 'Thumbs.db');
 			/*
-			$this->start('Optimizing '. $imgDir)
-				->runLocal([
-					self::IMGMIN,
-					'-o', 7,
-					$imgDir,// . DIRECTORY_SEPARATOR. '*',
-					$this->localStatic . 'img'
-				])->finish();
+			  $this->start('Optimizing '. $imgDir)
+			  ->runLocal([
+			  self::IMGMIN,
+			  '-o', 7,
+			  $imgDir,// . DIRECTORY_SEPARATOR. '*',
+			  $this->localStatic . 'img'
+			  ])->finish();
 			 */
-			foreach(self::rglob($imgDir . DIRECTORY_SEPARATOR . '*.{jpg,jpeg,png,gif,svg,bmp}', GLOB_BRACE) as $image) {
-				$output = $this->localStaticIMG . substr($image, strlen($imgDir)+1);
+			foreach (self::rglob($imgDir . DIRECTORY_SEPARATOR . '*.{jpg,jpeg,png,gif,svg,bmp}', GLOB_BRACE) as $image) {
+				$output = $this->localStaticIMG . substr($image, strlen($imgDir) + 1);
 				self::readyDir($output);
-				
-				if($compress)
-					$this->start('Optimizing '. $image)
-						->runLocal(['imagemin',
-							//'-o', 7,
-							$image,
-							'>',
-							$this->localStaticIMG . substr($image, strlen($imgDir)+1)
-						])->finish();
+
+
+				if ($compress)
+					$this->start('Optimizing ' . $image)
+							->runLocal(['imagemin',
+								//'-o', 7,
+								$image,
+								'>',
+								$this->localStaticIMG . substr($image, strlen($imgDir) + 1)
+							])->finish();
 				else
 					copy($image, $output); // symlink
 			}
 		}
 	}
-	
+
+	// </editor-fold>
+
+	// <editor-fold defaultstate="collapsed" desc="Useful">
+
 	/**
-	 * Uploads to S3
+	 * Run some commands on the remote server
+	 * @param string $command commands to run
+	 * @return \Compiler this
 	 */
-	private function upload() {
+	private function runRemote($command) {
+		return $this->runLocal(['plink',
+					'-ssh', //
+					'-i ', $this->ppk, // Private key file to access server
+					$this->host, // username and hostname to connect to
+					'"' . $command . '"', // Commands to run
+		]);
+	}
+
+
+	/**
+	 * Run some commands on this computer
+	 * @param array $command commands to run
+	 * @return \Compiler $this
+	 */
+	private function runLocal($command) {
+		// make commands a list
+		if (!is_array($command))
+			$command = array($command);
+		$command = (implode(' ', $command));
+
+
+		// run
+		// echo "\n`$command`\n";
+		exec($command);
+
+
+		return $this;
+	}
+
+// </editor-fold>
+
+	/**
+	 * Uploads to S3 or remote server
+	 */
+	protected function upload() {
 		foreach([
 			$this->remoteSASS	=> $this->localStaticCSS,
 			$this->remoteJS		=> $this->localStaticJS,
@@ -568,100 +685,6 @@ class Compiler {
 	}
 
 	/**
-	 * Run some commands on the remote server
-	 * @param string $command commands to run
-	 * @return \Compiler this
-	 */
-	private function runRemote($command) {
-		return $this->runLocal(['plink',
-			'-ssh',				//
-			'-i ', $this->ppk,	// Private key file to access server
-			$this->host,		// username and hostname to connect to
-			'"'. $command .'"',	// Commands to run
-		]);
-	}
-	
-	/**
-	 * Run some commands on this computer
-	 * @param array $command commands to run
-	 * @return \Compiler $this
-	 */
-	private function runLocal($command) {
-		// make commands a list
-		if(!is_array($command))
-			$command = array($command);
-		$command = (implode(' ', $command));
-		
-		// run
-		// echo "\n`$command`\n";
-		exec($command);
-		
-		return $this;
-	}
-	
-	/**
-	 * Remove everything in a directory
-	 * @param string $dir directiory to wipe
-	 * @param boolean $rmdir remove directory also?
-	 */
-	private static function wipeDir($dir, $rmdir = false) {
-		if(file_exists($dir)) {
-			$it = new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS);
-			$files = new \RecursiveIteratorIterator($it, \RecursiveIteratorIterator::CHILD_FIRST);
-			foreach($files as $file) 
-				if ($file->isDir())
-					rmdir($file->getRealPath());
-				else
-					unlink($file->getRealPath());
-				
-			if($rmdir)
-				rmdir ($dir);
-		}
-	}
-	
-	/**
-	 * Determines if a command exists on the current environment
-	 *
-	 * @link http://stackoverflow.com/a/18540185
-	 * @param string $command The command to check
-	 * @return bool True if the command has been found ; otherwise, false.
-	 */
-	private static function commandExists ($command) {
-		$whereIsCommand = (PHP_OS == 'WINNT') ? 'where' : 'which';
-		$process = proc_open("$whereIsCommand $command", [
-			0 => array("pipe", "r"), //STDIN
-			1 => array("pipe", "w"), //STDOUT
-			2 => array("pipe", "w"), //STDERR
-		], $pipes);
-
-		if ($process !== false) {
-			$stdout = stream_get_contents($pipes[1]);
-			$stderr = stream_get_contents($pipes[2]);
-			fclose($pipes[1]);
-			fclose($pipes[2]);
-			proc_close($process);
-
-			return $stdout != '';
-		}
-
-		return false;
-	}
-	
-	/**
-	 * Makes sure all binaries are on system
-	 * @param \Composer\Script\Event $event
-	 * @throws Exception
-	 */
-	public static function checkBinaries(\Composer\Script\Event $event) {
-		foreach(self::$binaries as $cmd) {
-			if(!self::commandExists($cmd))
-				throw new \Exception('Binary "'. $cmd .'" not found in PATH');
-
-			// $event->getIO()->write($cmd . ' found.');
-		}
-	}
-
-	/**
 	 * Puts everything on the chosen server
 	 */
 	public function compile() {
@@ -688,7 +711,7 @@ class Compiler {
 		
 		if(isset($this->localDoc))
 			$this->makeDoc();
-		
+
 		// run through static files then upload them
 		$this->sass($this->compress);
 		$this->javascript($this->compress);
