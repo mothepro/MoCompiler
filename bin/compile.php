@@ -28,7 +28,7 @@ require 'vendor/autoload.php';
 /**
  * Giv'em some help
  */
-function help() {
+$showHelp = function() {
 	echo <<<HELP
 Mo's PHP Project Compiler!
 	-h		--help	Print this help message.
@@ -67,7 +67,7 @@ Mo's PHP Project Compiler!
 		apigen/apigen
 		nette/neon
 HELP;
-}
+};
 
 /**
  * Returns a value if option is found in global
@@ -76,10 +76,7 @@ HELP;
  * @param string $name option to look for
  * @return string|null
  */
-function check($name) {
-	// screw it
-	global $neon;
-	
+$check = function($name) use ($neon) {
 	$def = function($config, $args) use (&$def) {
 		$name = array_shift($args);
 		$ret = false;
@@ -95,7 +92,7 @@ function check($name) {
 	};
 	
 	return $def($neon, func_get_args());
-}
+};
 
 /**
  * Replaces config with command line options recursively
@@ -104,15 +101,15 @@ function check($name) {
  * @param string $name name
  * @param mixed $newValue value
  */
-function replace(&$origin, $name, $newValue) {
+$replace = function(&$origin, $name, $newValue) use($replace) {
 	$names = explode('-', $name);
 	$curr = array_shift($names);
 	
 	if(empty($names))
 		$origin[ $curr ] = $newValue;
 	else
-		replace($origin[$curr], implode('-', $names), $newValue);
-}
+		$replace($origin[$curr], implode('-', $names), $newValue);
+};
 
 // no errors wanted
 set_time_limit(0);
@@ -154,10 +151,10 @@ if(isset($opt['c'])) {
 		$neon = $neon['compiler'];
 	
 	// move legacy cmd line options
-	if(isset($opt['s']))	replace($neon, 'host', $opt['s']);
-	if(isset($opt['p']))	replace($neon, 'ppk', $opt['p']);
-	if(isset($opt['d']))	replace($neon, 'project-remote', $opt['d']);
-	if(isset($opt['l']))	replace($neon, 'project-local', $opt['l']);
+	if(isset($opt['s']))	$replace($neon, 'host', $opt['s']);
+	if(isset($opt['p']))	$replace($neon, 'ppk', $opt['p']);
+	if(isset($opt['d']))	$replace($neon, 'project-remote', $opt['d']);
+	if(isset($opt['l']))	$replace($neon, 'project-local', $opt['l']);
 
 	// overwrite neon with cmd line opts
 	if(!is_array($neon))
@@ -166,70 +163,70 @@ if(isset($opt['c'])) {
 	// replace $neon[ $name ] with $val
 	unset($opt['c']);
 	foreach($opt as $name => $val)
-		replace($neon, $name, $val);
+		$replace($neon, $name, $val);
 
 	//  check errors
-	$error = !(check('ppk') && check('project', 'remote') && check('host'));
+	$error = !($check('ppk') && $check('project', 'remote') && $check('host'));
 }
 
 // error OR just needs a little help
 if($error || isset($opt['h']) || isset($opt['help'])) {
 	if($error)
 		echo 'Error, missing required option.', PHP_EOL, PHP_EOL;
-	help();
+	$showHelp();
 	exit($error);
 }
 
 // make the constant
-if(check('constants') && check('constantOutput')) {
-	$c = new Mo\Compiler\Constants(check('constants'));
-	$c->write(check('constantOutput'), true);
-	require check('constantOutput');
+if($check('constants') && $check('constantOutput')) {
+	$c = new Mo\Compiler\Constants($check('constants'));
+	$c->write($check('constantOutput'), true);
+	require $check('constantOutput');
 }
 
 // start the compiler
 $c = new Mo\Compiler\Compiler;
-$c	->setHost(check('host'))
-	->setPpk(check('ppk'))
-	->setRemote(check('project', 'remote'));
+$c	->setHost($check('host'))
+	->setPpk($check('ppk'))
+	->setRemote($check('project', 'remote'));
 
 // misc
-$c->setCompress(check('compress'));
-$c->setSilent(check('silent'));
+$c->setCompress($check('compress'));
+$c->setSilent($check('silent'));
 
 // add directories
-if(check('local', 'sass'))	
-	foreach(check('local', 'sass')	as $dir)
+if($check('local', 'sass'))	
+	foreach($check('local', 'sass')	as $dir)
 		$c->addSASS($dir);
 
-if(check('local', 'js'))	
-	foreach(check('local', 'js') 	as $dir)
+if($check('local', 'js'))	
+	foreach($check('local', 'js') 	as $dir)
 		$c->addJS($dir);
 
-if(check('local', 'img'))
-	foreach(check('local', 'img') 	as $dir)
+if($check('local', 'img'))
+	foreach($check('local', 'img') 	as $dir)
 		$c->addImage($dir);
 
-if(check('upload'))
-	foreach(check('upload') 		as $dir)
+if($check('upload'))
+	foreach($check('upload') 		as $dir)
 		$c->addMove($dir);
 
 // misc
-if(check('project', 'local'))	$c->setLocal(check('project', 'local'));
-if(check('twig'))				$c->setLocalTpl(check('twig'));
-if(check('apigen'))				$c->setLocalDoc(check('apigen'));
+if($check('project', 'local'))	$c->setLocal($check('project', 'local'));
+if($check('twig'))				$c->setLocalTpl($check('twig'));
+if($check('apigen'))			$c->setLocalDoc($check('apigen'));
 
 // S3
-if(check('s3', 'key') && check('s3', 'key'))
+if($check('s3', 'key') && $check('s3', 'key'))
 	$c->setS3(
-		check('s3', 'key'),
-		check('s3', 'secret')
+		$check('s3', 'key'),
+		$check('s3', 'secret')
 	);
 
 // remote
-if(check('remote', 'sass'))	$c->setRemoteSASS(check('remote', 'sass'));
-if(check('remote', 'js'))	$c->setRemoteJS(check('remote', 'js'));
-if(check('remote', 'img'))	$c->setRemoteImage(check('remote', 'img'));
+if($check('remote', 'sass'))	$c->setRemoteSASS($check('remote', 'sass'));
+if($check('remote', 'js'))		$c->setRemoteJS($check('remote', 'js'));
+if($check('remote', 'img'))		$c->setRemoteImage($check('remote', 'img'));
 
 // start
 $c->compile();
