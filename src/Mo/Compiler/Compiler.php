@@ -607,7 +607,7 @@ class Compiler {
 					'-ssh', //
 					'-i ', $this->ppk, // Private key file to access server
 					$this->host, // username and hostname to connect to
-					'"' . $command . '"', // Commands to run
+					'"' . strval($command) . '"', // Commands to run
 		]);
 	}
 
@@ -621,7 +621,7 @@ class Compiler {
 		// make commands a list
 		if (!is_array($command))
 			$command = array($command);
-		$command = (implode(' ', $command));
+		$command = strval(implode(' ', $command));
 
 
 		// run
