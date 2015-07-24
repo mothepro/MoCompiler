@@ -85,7 +85,7 @@ class Constants {
 					// make member public?
 					if(substr($mem, 0, strlen(self::PUB_PREFIX)) === self::PUB_PREFIX) {
 						$mem = substr($mem, 1);
-						$this->public[ $name ][ $mem ] = $v
+						$this->public[ $name ][ $mem ] = $v;
 					}
 					
 					$this->class[ $name ][ $mem ] = $v;
