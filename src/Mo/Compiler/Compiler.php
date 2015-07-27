@@ -425,23 +425,29 @@ class Compiler {
 					continue;
 
 				$this->start('Working on ' . $output);
+				
+				// Add Constants variables 
+				if(isset($_GLOBALS["constants"])) {
+					// sass which will actuall be compiled [hidden]
+					$file .= md5(time()) . '.sex';
+					$f = fopen($file, 'w');
+					exec('attrib +H ' . escapeshellarg($file));
 
-
-				// sass which will actuall be compiled [hidden]
-				$input = $file . md5(time()) . '.sex';
-				$f = fopen($input, 'w');
-				exec('attrib +H ' . escapeshellarg($input));
-
-				// get the URL Constants
-				$urls = array();
-				foreach ($__PUBLIC_CONST as $name => $val)
-					$urls[] = '$' . strtolower(str_replace('.', '-', $name)) . ': \'' . $val . '\' !default;' . PHP_EOL; // $bootstrap-sass-asset-helper: (function-exists(twbs-font-path)) !default;
-
+					// get the URL Constants
+					$urls = array();
+					foreach ($__PUBLIC_CONST as $name => $val) {
+						if(!is_array($val))
+							$urls[] = '$const-' . strtolower($name) . ': \'' . $val . '\' !default;';
+						else
+							foreach($val as $meth => $trueVal)
+								$urls[] = '$const-'. strtolower($name) .'-'. strtolower($meth) .': \''. $trueVal .'\' !default;'; // $bootstrap-sass-asset-helper: (function-exists(twbs-font-path)) !default;
+					}
 					
-				// add URL vars to temp sass file
-				fwrite($f, implode($urls));
-				fwrite($f, file_get_contents($file));
-
+					// add URL vars to temp sass file
+					fwrite($f, implode(PHP_EOL, $urls));
+					fwrite($f, file_get_contents($file));
+				}
+				
 				// the correct path for output
 				$output = $this->localStaticCSS . $output;
 				$output = substr($output, 0, -4) . 'css';
@@ -455,15 +461,19 @@ class Compiler {
 					'--scss',
 					'--trace',
 					'--unix-newlines',
-										'--style',
+					
+					'--style',
 					($compress ? 'compressed --sourcemap=none' : 'expanded -l'),
-										$input,
+					
+					$file,
 					$output,
 				]);
 
-				fclose($f);
-				unlink($input);
-
+				// new file was made
+				if(isset($f)) {
+					fclose($f);
+					unlink($file);
+				}
 
 				$this->finish();
 			}
