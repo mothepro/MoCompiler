@@ -76,7 +76,7 @@ HELP;
  * @param string $name option to look for
  * @return string|null
  */
-$check = function($name) use ($neon) {
+$check = function() use (&$neon) {
 	$def = function($config, $args) use (&$def) {
 		$name = array_shift($args);
 		$ret = false;
@@ -101,14 +101,14 @@ $check = function($name) use ($neon) {
  * @param string $name name
  * @param mixed $newValue value
  */
-$replace = function(&$origin, $name, $newValue) use($replace) {
+$replace = function($name, $newValue) use(&$neon, &$replace) {
 	$names = explode('-', $name);
 	$curr = array_shift($names);
 	
 	if(empty($names))
-		$origin[ $curr ] = $newValue;
+		$neon[ $curr ] = $newValue;
 	else
-		$replace($origin[$curr], implode('-', $names), $newValue);
+		$replace($neon[$curr], implode('-', $names), $newValue);
 };
 
 // no errors wanted
@@ -151,10 +151,10 @@ if(isset($opt['c'])) {
 		$neon = $neon['compiler'];
 	
 	// move legacy cmd line options
-	if(isset($opt['s']))	$replace($neon, 'host', $opt['s']);
-	if(isset($opt['p']))	$replace($neon, 'ppk', $opt['p']);
-	if(isset($opt['d']))	$replace($neon, 'project-remote', $opt['d']);
-	if(isset($opt['l']))	$replace($neon, 'project-local', $opt['l']);
+	if(isset($opt['s']))	$replace('host', $opt['s']);
+	if(isset($opt['p']))	$replace('ppk', $opt['p']);
+	if(isset($opt['d']))	$replace('project-remote', $opt['d']);
+	if(isset($opt['l']))	$replace('project-local', $opt['l']);
 
 	// overwrite neon with cmd line opts
 	if(!is_array($neon))
