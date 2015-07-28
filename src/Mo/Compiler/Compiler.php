@@ -367,7 +367,7 @@ class Compiler {
 				$this->start('Working on ' . $output);
 				
 				// Add Constants variables 
-				if(isset($_GLOBALS["constants"])) {
+				if(isset($GLOBALS["constants"])) {
 					// sass which will actuall be compiled [hidden]
 					$file .= md5(time()) . '.sex';
 					$f = fopen($file, 'w');
@@ -375,7 +375,7 @@ class Compiler {
 
 					// get the URL Constants
 					$urls = array();
-					foreach ($_GLOBALS["constants"] as $name => $val) {
+					foreach ($GLOBALS["constants"] as $name => $val) {
 						if(!is_array($val))
 							$urls[] = '$const-' . strtolower($name) . ': \'' . $val . '\' !default;';
 						else

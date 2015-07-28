@@ -123,7 +123,7 @@ class Constants {
 		}
 		
 		// how should I do this?
-		$str[] = '$_GLOBALS["constants"] = '. var_export($this->public, true).';';
+		$str[] = '$GLOBALS["constants"] = '. var_export($this->public, true).';';
 		//foreach($this->global as $name => $val)
 		//	$str[] = 'define("'. strtoupper($name) .'", '. $val .');';
 		
