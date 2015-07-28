@@ -358,10 +358,8 @@ class Compiler {
 
 	/**
 	 * Combines SASS to a file foreach folder
-	 * 
-	 * @param boolean $compress compress the sass
 	 */
-	private function sass($compress = false) {
+	private function sass() {
 		// get all sass dirs
 		foreach ($this->localStatic[ __FUNCTION__ ] as $dir) {
 			$this->start('Converting SASS to CSS in ' . $dir);
@@ -394,6 +392,7 @@ class Compiler {
 					// add URL vars to temp sass file
 					fwrite($f, implode(PHP_EOL, $urls));
 					fwrite($f, file_get_contents($file));
+					fclose($f);
 				}
 				
 				// the correct path for output
@@ -417,15 +416,11 @@ class Compiler {
 					$output,
 				]);
 
-				// new file was made
-				if(isset($f)) {
-					fclose($f);
-					unlink($file);
-					unset($f);
-				}
-
 				$this->finish();
 			}
+			
+			foreach (glob($dir . DIRECTORY_SEPARATOR . '*.sex') as $file)
+				unlink($file);
 
 			$this->finish();
 		}
@@ -435,7 +430,7 @@ class Compiler {
 	/**
 	 * Merges all files
 	 */
-	private function js($compress = false) {
+	private function js() {
 		foreach ($this->localStatic[ __FUNCTION__ ] as $jswip) {
 			// make file for each sub folder
 			foreach (glob($jswip . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) as $v) {
@@ -501,7 +496,7 @@ class Compiler {
 	 * Move images to upload dir
 	 * Optimize them if needed
 	 */
-	protected function img($compress = false) {
+	protected function img() {
 		foreach ($this->localStatic[ __FUNCTION__ ] as $imgDir) {
 			//if(is_file($imgDir . DIRECTORY_SEPARATOR . 'Thumbs.db'))
 			//	unlink($imgDir . DIRECTORY_SEPARATOR . 'Thumbs.db');
@@ -545,7 +540,7 @@ class Compiler {
 	private function runRemote($command) {
 		return $this->runLocal(['plink',
 					'-ssh', //
-					'-i ', $this->ppk, // Private key file to access server
+					'-i', $this->ppk, // Private key file to access server
 					$this->host, // username and hostname to connect to
 					'"' . strval($command) . '"', // Commands to run
 		]);
