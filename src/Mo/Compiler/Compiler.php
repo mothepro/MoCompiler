@@ -41,6 +41,7 @@ class Compiler {
 		'twigjs',
 		'imagemin',
 		'java',
+		'r.js.cmd',
 	];
 	
 	/**
@@ -146,6 +147,11 @@ class Compiler {
 	 * Vendor binary folder
 	 */
 	const BIN = 'vendor\\bin\\';// 'vendor'. DIRECTORY_SEPARATOR .'bin'. DIRECTORY_SEPARATOR;
+	
+	/**
+	 * r.js build config path
+	 */
+	const RJS_BUILD = 'build.js';
 	// </editor-fold>
 
 	// <editor-fold defaultstate="collapsed" desc="Reporting">
@@ -432,12 +438,27 @@ class Compiler {
 	 */
 	private function js() {
 		foreach ($this->localStatic[ __FUNCTION__ ] as $jswip) {
+			
+			// r.js optimization
+			if($this->compress) {
+				$rjsBuild = $jswip .DIRECTORY_SEPARATOR. self::RJS_BUILD;
+				if(is_file($rjsBuild)) {
+					$this	->start('Optimizing '. self::RJS_BUILD .' with r.js')
+							->runLocal(['r.js.cmd',
+								'-o', $rjsBuild,
+							])->finish();
+
+					// temp destination directory
+					$jswip .= DIRECTORY_SEPARATOR . 'dist';
+					$this->wipe[] = $jswip;
+				}
+			}
+			
 			// make file for each sub folder
 			foreach (glob($jswip . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) as $v) {
 				if ($this->compress) {
 					$output = $this->tmp[ __FUNCTION__ ] . basename($v) . '.js';
 					self::readyDir($output);
-
 
 					$this->start('Minifing ' . basename($v) . ' with closure');
 
@@ -707,10 +728,6 @@ class Compiler {
 		// config
 		$this	->start('Updating Server Enviroment');
 		
-			// run composer if added
-			if(in_array('composer.json', $this->localCopy))
-				$this->runRemote('composer update --no-dev -d '. $this->remoteProj); // -o [optimize autoloader]
-		
 			// reset file permissions
 			if(!isset($this->s3))
 				foreach($this->remoteStatic as $type => $path)
@@ -718,9 +735,14 @@ class Compiler {
 		
 		$this	->finish();
 		
+		// run composer if added
+		if(in_array('composer.json', $this->localCopy))
+			$this->addHook('composer update --no-dev -d '. $this->remoteProj); // -o [optimize autoloader]
+			
 		// hooks
 		if(isset($this->hook['post'])) {
 			$this->start("Running Last Hook");
+			
 			foreach($this->hook['post'] as $cmd)
 				$this->runRemote ($cmd);
 			$this->finish();
