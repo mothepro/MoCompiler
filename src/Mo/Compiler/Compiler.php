@@ -412,7 +412,7 @@ class Compiler {
 				// new file was made
 				if(isset($f)) {
 					fclose($f);
-					echo "$file\n";//unlink($file);
+					unlink($file);
 					unset($f);
 				}
 
@@ -635,7 +635,7 @@ class Compiler {
 					$this->finish();
 				}
 			} else {
-				$this	->start('Uploading '. $this->tmp[ $type ] .' to '. $destDir)
+				$this	->start('Uploading Static '. $type .' to '. $destDir)
 //						->runRemote('rm -r '. $destDir .'; mkdir -p '. $destDir)
 						->runLocal(['pscp',
 							'-r',						// copy recursively

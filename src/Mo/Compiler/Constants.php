@@ -127,7 +127,7 @@ class Constants {
 		//foreach($this->global as $name => $val)
 		//	$str[] = 'define("'. strtoupper($name) .'", '. $val .');';
 		
-		return file_put_contents($location, implode(' ', $str));
+		return file_put_contents($location, implode(PHP_EOL, $str));
 	}
 	
 	protected static function encode($val) {
