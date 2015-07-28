@@ -601,7 +601,14 @@ class Compiler {
 					case 'jpeg':
 						$mime = 'image/jpeg';
 						break;
+					case 'svg':
+						$mime = 'image/svg+xml';
+						break;
+					case 'bmp':
+						$mime = 'image/x-ms-bmp';
+						break;
 					default:
+						$mime = 'text/plain';
 						break;
 					}
 					// full MIME type
