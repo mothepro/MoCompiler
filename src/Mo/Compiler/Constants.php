@@ -36,17 +36,11 @@ class Constants {
 	 *
 	 * @var string[]
 	 */
-	private $global = array();
+	private $const = array();
 	
 	/**
 	 *
-	 * @var string[][]
-	 */
-	private $class = array();
-	
-	/**
-	 *
-	 * @var string
+	 * @var string[]
 	 */
 	private $public = array();
 	
@@ -60,6 +54,11 @@ class Constants {
 	 * Autoloading in PHP
 	 */
 	const AUTOLOAD = 'require "vendor/autoload.php";';
+
+	/**
+	 * Namespace Seperator in PHP
+	 */
+	const NAMESPACE_SEPERATOR = '\\';
 	
 	/**
 	 * Public Modifier Prefix
@@ -67,35 +66,51 @@ class Constants {
 	const PUB_PREFIX = '+';
 
 	public function __construct(array $const) {
-		foreach ($const as $name => $val) {
-			// make public?
-			$pub = substr($name, 0, strlen(self::PUB_PREFIX)) === self::PUB_PREFIX;
-			if($pub)
-				$name = substr($name, 1);
-			
-			// global
-			if(!is_array($val)) {
-				$this->global[ $name ] = $val;
+		$this->const = self::nameVals($const);
+		$this->public = self::findPublic($const);
+	}
+	
+	private static function nameVals($arr) {
+		$ret = array();
+		
+		foreach($arr as $name => $val) {
+			// remove public prefix
+			if(substr($name, 0, strlen(self::PUB_PREFIX)) === self::PUB_PREFIX)
+				$name = substr($name, 1)
 				
-				if($pub)
-					$this->public[ $name ] = $this->global[ $name ];
-			// class const
-			} else { 
-				foreach ($val as $mem => $v) {
-					// make member public?
-					if(substr($mem, 0, strlen(self::PUB_PREFIX)) === self::PUB_PREFIX) {
-						$mem = substr($mem, 1);
-						$this->public[ $name ][ $mem ] = $v;
-					}
-					
-					$this->class[ $name ][ $mem ] = $v;
-				}
-				
-				// make entire class public
-				if($pub)
-					$this->public[ $name ] = $this->class[ $name ];
-			}
+			// there is more
+			if(is_array($val))
+				foreach(self::nameVals($val) as $newName => $newVal)
+					$ret[ $name . self::NAMESPACE_SEPERATOR . $newName ] = $newVal;
+			else
+				$ret[ $name ] = $val;
 		}
+		
+		return $ret;
+	}
+	
+	private static function findPublic($arr, $public = false) {
+		$ret = array();
+		
+		foreach($arr as $name => $val) {
+			$pub = $public; // inherit
+			
+			// make public?
+			if(substr($name, 0, strlen(self::PUB_PREFIX)) === self::PUB_PREFIX) {
+				$name = substr($name, 1);
+				$pub = true;
+			}
+				
+			// there is more
+			if(is_array($val))
+				foreach(self::findPublic($val, $pub) as $newName => $newVal)
+					if($pub)
+						$ret[ $name . self::NAMESPACE_SEPERATOR . $newName ] = $newVal;
+			elseif($pub)
+				$ret[ $name ] = $val;
+		}
+		
+		return $ret;
 	}
 	
 	public function getGlobal() {
@@ -112,20 +127,11 @@ class Constants {
 		if($requireAutoloader)
 			$str[] = self::AUTOLOAD;
 		
-		foreach($this->global as $name => $val)
-			$str[] = 'define("'. strtoupper($name) .'", '. self::encode($val) .');';
-		
-		foreach($this->class as $class => $tmp) {
-			$str[] = 'abstract class '. strtoupper($class) .' {';
-			foreach($tmp as $name => $val)
-				$str[] = 'const '. strtoupper ($name) .' = '. self::encode($val) .';';
-			$str[] = '}';
-		}
-		
+		foreach($this->const as $name => $val)
+			$str[] = 'define("'. self::nameEncode($name) .'", '. self::encode($val) .');';
+
 		// how should I do this?
-		$str[] = '$GLOBALS["constants"] = '. var_export($this->public, true).';';
-		//foreach($this->global as $name => $val)
-		//	$str[] = 'define("'. strtoupper($name) .'", '. $val .');';
+		$str[] = '$GLOBALS["constants"] = '. var_export($this->public, true) .';';
 		
 		return file_put_contents($location, implode(PHP_EOL, $str));
 	}
@@ -137,6 +143,19 @@ class Constants {
 			$ret = \Nette\Neon\Neon::encode($val);
 				
 		return $ret;
+	}
+	
+	protected static function nameEncode($name) {
+		$names = explode(self::NAMESPACE_SEPERATOR, $name);
+		
+		// First letter
+		foreach($names as $k => $v)
+			$v = ucfirst(strtolower($v));
+		
+		// WHOLE WORD
+		$names[ $k ] = strtoupper($v);
+		
+		return implode(self::NAMESPACE_SEPERATOR, $names);
 	}
 
 	/**
