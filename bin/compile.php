@@ -213,6 +213,11 @@ if($check('project', 'local'))	$c->setLocal($check('project', 'local'));
 if($check('twig'))				$c->setLocalTpl($check('twig'));
 if($check('apigen'))			$c->setLocalDoc($check('apigen'));
 
+// hooks
+if($check('hooks'))
+	foreach($check('hooks') as $type => $dir)
+		$c->addHook($dir);
+
 // S3
 if($check('s3', 'key') && $check('s3', 'key'))
 	$c->setS3(

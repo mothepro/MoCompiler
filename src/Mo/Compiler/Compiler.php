@@ -95,6 +95,14 @@ class Compiler {
 	 * @var string[]
 	 */
 	private $localCopy;
+	
+	/**
+	 * Remote hooks to run
+	 * [when][command]
+	 * 
+	 * @var string[][]
+	 */
+	private $hook = array();
 
 	/**
 	 * Local path to static data
@@ -688,7 +696,6 @@ class Compiler {
 		$this->upload();
 
 		// upload project
-		$this->localCopy[] = 'composer.json'; //$this->addMove('composer.json');
 		foreach($this->localCopy as $name) {
 			$this	->start('Uploading Project '. $name)
 						->runLocal(['pscp',
@@ -703,8 +710,11 @@ class Compiler {
 		}
 
 		// config
-		$this	->start('Updating Server Enviroment')
-					->runRemote('composer update --no-dev -d '. $this->remoteProj); // -o [optimize autoloader]
+		$this	->start('Updating Server Enviroment');
+		
+			// run composer if added
+			if(in_array('composer.json', $this->localCopy))
+				$this->runRemote('composer update --no-dev -d '. $this->remoteProj); // -o [optimize autoloader]
 		
 			// reset file permissions
 			if(!isset($this->s3))
@@ -712,6 +722,14 @@ class Compiler {
 					$this->runRemote('chmod 774 -R '. $path);
 		
 		$this	->finish();
+		
+		// hooks
+		if(isset($this->hook['post'])) {
+			$this->start("Running Last Hook");
+			foreach($this->hook['post'] as $cmd)
+				$this->runRemote ($cmd);
+			$this->finish();
+		}
 
 		// clean up
 		$this	->start('Cleaning up');
@@ -785,5 +803,12 @@ class Compiler {
 		$this->localCopy[] = $dir;
 		return $this;
 	}
+	
+	public function addHook($hook) {
+		$this->hook['post'][] = $hook;
+		return $this;
+	}
+
+
 // </editor-fold>
 }
