@@ -62,30 +62,10 @@ class Compiler {
 	private $localProj;
 
 	/**
-	 * Local path to css data folder
-	 * @var string
-	 */
-	private $localStaticCSS;
-
-	/**
-	 * Local path to js data folder
-	 * @var string
-	 */
-	private $localStaticJS;
-
-	/**
-	 * Local path to image data folder
-	 * @var string
-	 */
-	private $localStaticIMG;
-
-
-	/**
 	 * Action being run
 	 * @var \SplStack
 	 */
 	private $status;
-
 
 	/**
 	 * AWS S3 object
@@ -110,53 +90,31 @@ class Compiler {
 	 */
 	private $remoteProj;
 
-
 	/**
-	 * AWS Bucket File
-	 * @var string
-	 */
-	private $remoteSASS;
-
-
-	/**
-	 * AWS Bucket File
-	 * @var string
-	 */
-	private $remoteJS;
-
-
-	/**
-	 * AWS Bucket File
-	 * @var string
-	 */
-	private $remoteImage;
-
-
-	/**
-	 * Directories of sass to upload
+	 * Files or Folders to move to remote project
 	 * @var string[]
 	 */
-	private $localMove= array();
+	private $localCopy;
+
+	/**
+	 * Local path to static data
+	 * PRE processing
+	 * @var string[][]
+	 */
+	private $localStatic = array();
+
+	/**
+	 * Paths to where save static data
+	 * @var string[]
+	 */
+	private $remoteStatic = array();
 	
 	/**
-	 * Directories of sass to upload
+	 * Paths to static data about to be pushed
+	 * POST processing
 	 * @var string[]
 	 */
-	private $localSASS = array();
-
-
-	/**
-	 * Directories of js to upload
-	 * @var string[]
-	 */
-	private $localJS = array();
-
-
-	/**
-	 * Directories of images to upload
-	 * @var string[]
-	 */
-	private $localImage = array();
+	private $tmp = array();
 
 	/**
 	 * Directories to wipe
@@ -169,7 +127,6 @@ class Compiler {
 	 * @var boolean
 	 */
 	private $silent = false;
-
 
 	/**
 	 * Compress and minify static files
@@ -197,7 +154,7 @@ class Compiler {
 
 
 		if (!$this->silent)
-			echo PHP_EOL, str_repeat("\t", $this->status->count() - 1), $message;
+			echo PHP_EOL, str_repeat("\t", $this->status->count() - 1), $message, "\t... ";
 
 
 		return $this;
@@ -212,7 +169,7 @@ class Compiler {
 
 
 		if (!$this->silent)
-			echo PHP_EOL, str_repeat("\t", $this->status->count()), '   ', number_format($end - $begin, 4), ' seconds';
+			echo PHP_EOL, str_repeat("\t", $this->status->count()), ' > ', number_format($end - $begin, 4), ' seconds';
 
 
 		return $this;
@@ -343,36 +300,24 @@ class Compiler {
 		$this->start('Creating JS Templates from ' . $this->localTpl);
 
 		$this->wipe[] = $output = self::path(sys_get_temp_dir()) . 'twigjs' . time() . DIRECTORY_SEPARATOR;
-		$cwd = getcwd();
-
 
 		foreach (self::rglob($this->localTpl . '*.twig') as $file) {
-			// go directly to file
-			chdir(dirname($file));
-
-
-			// output flag doesn't work
-			$this->runLocal(['twigjs', basename($file)]);
-		}
-
-
-		chdir($cwd);
-
-
-		// prepare the dir and move js files there
-		foreach (self::rglob($this->localTpl . '*.js') as $file) {
-			$outFile = $output . substr($file, strlen($cwd));
-
-
-			self::readyDir($outFile);
-			rename($file, $outFile);
+			$id = substr($file, strlen($this->localTpl));
+			$tpl = file_get_contents($file);
+			
+			$data = [
+				'id'	=> $id,
+				'data'	=> $tpl,
+			];
+			
+			self::readyDir($output . $file);
+			file_put_contents($output . $file, 'twig('. json_encode($data) .');');
 		}
 
 		$this->finish();
 
-
-		$this->addJS($output);
-		$this->addMove($this->localTpl);
+		$this->addLocalStatic('js', $output);
+		$this->addCopy($this->localTpl);
 	}
 
 
@@ -401,22 +346,17 @@ class Compiler {
 
 // </editor-fold>
 
-	// <editor-fold defaultstate="collapsed" desc="Convert">
+	// <editor-fold defaultstate="collapsed" desc="Processors">
 
 	/**
 	 * Combines SASS to a file foreach folder
 	 * 
-	 * @global string[] $__PUBLIC_CONST list of constants to be used
 	 * @param boolean $compress compress the sass
 	 */
 	private function sass($compress = false) {
-		global $__PUBLIC_CONST;
-		//self::wipeDir($this->localStatic . 'css');
-		
 		// get all sass dirs
-		foreach ($this->localSASS as $dir) {
+		foreach ($this->localStatic[ __FUNCTION__ ] as $dir) {
 			$this->start('Converting SASS to CSS in ' . $dir);
-
 
 			foreach (glob($dir . DIRECTORY_SEPARATOR . '*.scss') as $file) {
 				//skip if partial
@@ -435,7 +375,7 @@ class Compiler {
 
 					// get the URL Constants
 					$urls = array();
-					foreach ($__PUBLIC_CONST as $name => $val) {
+					foreach ($_GLOBALS["constants"] as $name => $val) {
 						if(!is_array($val))
 							$urls[] = '$const-' . strtolower($name) . ': \'' . $val . '\' !default;';
 						else
@@ -449,7 +389,7 @@ class Compiler {
 				}
 				
 				// the correct path for output
-				$output = $this->localStaticCSS . $output;
+				$output = $this->tmp[ __FUNCTION__ ] . $output;
 				$output = substr($output, 0, -4) . 'css';
 
 				// make sure path is ready
@@ -463,7 +403,7 @@ class Compiler {
 					'--unix-newlines',
 					
 					'--style',
-					($compress ? 'compressed --sourcemap=none' : 'expanded -l'),
+					($this->compress ? 'compressed --sourcemap=none' : 'expanded -l'),
 					
 					$file,
 					$output,
@@ -472,12 +412,12 @@ class Compiler {
 				// new file was made
 				if(isset($f)) {
 					fclose($f);
-					unlink($file);
+					echo "$file\n";//unlink($file);
+					unset($f);
 				}
 
 				$this->finish();
 			}
-
 
 			$this->finish();
 		}
@@ -486,33 +426,17 @@ class Compiler {
 
 	/**
 	 * Merges all files
-	 * @param boolean $compress
 	 */
-	private function javascript($compress = false) {
-		foreach ($this->localJS as $jswip) {
+	private function js($compress = false) {
+		foreach ($this->localStatic[ __FUNCTION__ ] as $jswip) {
 			// make file for each sub folder
 			foreach (glob($jswip . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) as $v) {
-				if ($compress) {
-					$output = $this->localStaticJS . basename($v) . '.js';
+				if ($this->compress) {
+					$output = $this->tmp[ __FUNCTION__ ] . basename($v) . '.js';
 					self::readyDir($output);
 
 
 					$this->start('Minifing ' . basename($v) . ' with closure');
-
-
-					/*
-					  foreach (self::rglob($v . DIRECTORY_SEPARATOR . '*.js') as $vv) 
-					  $f = fopen($output, 'a');
-					  ob_start();
-					  require $vv;
-					  $data = ob_get_clean();
-
-					  // add to file
-					  fwrite($f, $file);
-					  }
-					  fclose($f);
-					*/
-
 
 					$this->runLocal([self::BIN . 'closure.bat',
 						'--language_in', 'ECMASCRIPT5',
@@ -520,12 +444,11 @@ class Compiler {
 						$v . DIRECTORY_SEPARATOR . '**',
 					]);
 
-
 					$this->finish();
 				} else {
 					$this->start('Merging ' . basename($v) . '\'s JS files');
 
-					$full = $this->localStaticJS . basename($v) . '.js';
+					$full = $this->tmp[ __FUNCTION__ ] . basename($v) . '.js';
 
 					//remove compiled file
 					if (is_file($full))
@@ -569,10 +492,9 @@ class Compiler {
 	/**
 	 * Move images to upload dir
 	 * Optimize them if needed
-	 * @param boolean $compress
 	 */
-	protected function images($compress = false) {
-		foreach ($this->localImage as $imgDir) {
+	protected function img($compress = false) {
+		foreach ($this->localStatic[ __FUNCTION__ ] as $imgDir) {
 			//if(is_file($imgDir . DIRECTORY_SEPARATOR . 'Thumbs.db'))
 			//	unlink($imgDir . DIRECTORY_SEPARATOR . 'Thumbs.db');
 			/*
@@ -585,17 +507,17 @@ class Compiler {
 			  ])->finish();
 			 */
 			foreach (self::rglob($imgDir . DIRECTORY_SEPARATOR . '*.{jpg,jpeg,png,gif,svg,bmp}', GLOB_BRACE) as $image) {
-				$output = $this->localStaticIMG . substr($image, strlen($imgDir) + 1);
+				$output = $this->tmp[ __FUNCTION__ ] . substr($image, strlen($imgDir) + 1);
 				self::readyDir($output);
 
 
-				if ($compress)
+				if ($this->compress)
 					$this->start('Optimizing ' . $image)
 							->runLocal(['imagemin',
 								//'-o', 7,
 								$image,
 								'>',
-								$this->localStaticIMG . substr($image, strlen($imgDir) + 1)
+								$output
 							])->finish();
 				else
 					copy($image, $output); // symlink
@@ -649,16 +571,15 @@ class Compiler {
 	 * Uploads to S3 or remote server
 	 */
 	protected function upload() {
-		foreach([
-			$this->remoteSASS	=> $this->localStaticCSS,
-			$this->remoteJS		=> $this->localStaticJS,
-			$this->remoteImage	=> $this->localStaticIMG,
-		] as $bucket => $localDir) {
+		// copy to all destination folders
+		foreach($this->remoteStatic as $type => $destDir) {
+			
+			// copy from all static
 			if(isset($this->s3)) {
-				foreach(glob($localDir . '*') as $file) {
+				foreach(self::rglob($this->tmp[ $type ] . '*') as $file) {
 					$info = new \SplFileInfo($file);
 					
-					$this->start('Putting '. $info->getBasename() .' on '. $bucket);
+					$this->start('Putting '. $info->getBasename() .' on '. $destDir);
 
 					$data = file_get_contents($file);
 					$data = gzencode($data, 9);
@@ -690,7 +611,7 @@ class Compiler {
 
 					$this->s3->putObject(
 						$data,
-						$bucket,
+						$destDir,
 						$info->getBasename(),
 						\S3::ACL_PUBLIC_READ,
 						array(),
@@ -700,22 +621,22 @@ class Compiler {
 							'Expires'			=> 'Thu, 31 Dec 2037 23:55:55 GMT', //gmdate('D, d M Y H:i:s T', strtotime('+5 years'))
 							'Vary'				=> 'Accept-Encoding',
 							'Content-Encoding'	=> 'gzip',
-							'Content-Length'	=> strlen($data),
+							'Content-Length'	=> mb_strlen($data, '8bit'),
 						]
 					);
 
 					$this->finish();
 				}
 			} else {
-				$this	->start('Uploading '. $localDir .' to '. $bucket)
-						->runRemote('rm -r '. $bucket .'; mkdir -p '. $bucket)
+				$this	->start('Uploading '. $this->tmp[ $type ] .' to '. $destDir)
+//						->runRemote('rm -r '. $destDir .'; mkdir -p '. $destDir)
 						->runLocal(['pscp',
 							'-r',						// copy recursively
 							'-sftp',					// for use of SFTP protocal
 							'-C',						// enable compression
 							'-i', $this->ppk,			// Private key file to access server
-							$localDir,					// Directory to upload
-							$this->host .':'. $bucket,	// host:path on server to save data
+							$this->tmp[ $type ],		// Directory to upload
+							$this->host .':'. $destDir,	// host:path on server to save data
 						])->finish();
 			}
 		}
@@ -731,33 +652,37 @@ class Compiler {
 		$this->localProj	= self::path($this->localProj);
 		$this->remoteProj	= rtrim($this->remoteProj, DIRECTORY_SEPARATOR);
 		
-		// static files
-		$localStatic			= self::path(sys_get_temp_dir()) . 'data' . time() . DIRECTORY_SEPARATOR;
-		$this->localStaticCSS	= $localStatic . 'css' . DIRECTORY_SEPARATOR;	self::readyDir($this->localStaticCSS);
-		$this->localStaticJS	= $localStatic . 'js' . DIRECTORY_SEPARATOR;	self::readyDir($this->localStaticJS);
-		$this->localStaticIMG	= $localStatic . 'img' . DIRECTORY_SEPARATOR;	self::readyDir($this->localStaticIMG);
-		
-		$this->wipe[] = $localStatic;
-		
 		// Work from project
 		if(isset($this->localProj) && is_dir($this->localProj))
 			chdir($this->localProj);
-
+		
+		// twig templates
 		if(isset($this->localTpl))
 			$this->makeTpl();
 		
+		// documentation
 		if(isset($this->localDoc))
 			$this->makeDoc();
+		
+		// static files
+		$localStatic = self::path(sys_get_temp_dir()) . 'data' . time() . DIRECTORY_SEPARATOR;
+		$this->wipe[] = $localStatic;
+		
+		foreach($this->remoteStatic as $type => $trash) {
+			$this->tmp[ $type ] = $localStatic . $type . DIRECTORY_SEPARATOR;
+			self::readyDir( $this->tmp[ $type ] );
+			
+			// process static files
+			if(method_exists($this, $type))
+				$this->$type();
+		}
 
 		// run through static files then upload them
-		$this->sass($this->compress);
-		$this->javascript($this->compress);
-		$this->images($this->compress);
 		$this->upload();
 
 		// upload project
-		$this->addMove('composer.json');
-		foreach($this->localMove as $name) {
+		$this->localCopy[] = 'composer.json'; //$this->addMove('composer.json');
+		foreach($this->localCopy as $name) {
 			$this	->start('Uploading Project '. $name)
 						->runLocal(['pscp',
 							'-r',									// copy recursively
@@ -771,20 +696,13 @@ class Compiler {
 		}
 
 		// config
-		$this	->start('Updating Server Permissions')
+		$this	->start('Updating Server Enviroment')
 					->runRemote('composer update --no-dev -d '. $this->remoteProj); // -o [optimize autoloader]
 		
-		if(!isset($this->s3)) {
-			if(isset($this->remoteImage))
-				$this->runRemote('chmod 774 -R '. $this->remoteImage);
-			
-			if(isset($this->remoteSASS))
-				$this->runRemote('chmod 774 -R '. $this->remoteSASS);
-			
-			if(isset($this->remoteJS))
-				$this->runRemote('chmod 774 -R '. $this->remoteJS);
-					//->runRemote('chmod 774 '. $this->remoteProj . DIRECTORY_SEPARATOR .'* -R
-		}
+			// reset file permissions
+			if(!isset($this->s3))
+				foreach($this->remoteStatic as $type => $path)
+					$this->runRemote('chmod 774 -R '. $path);
 		
 		$this	->finish();
 
@@ -808,7 +726,7 @@ class Compiler {
 		return $this;
 	}
 
-			public function setPpk($ppk) {
+	public function setPpk($ppk) {
 		$this->ppk = $ppk;
 		return $this;
 	}
@@ -839,50 +757,26 @@ class Compiler {
 	public function setS3($key = null, $secret = null) {
 		$this->s3 = new \S3($key, $secret);
 		$this->setCompress(true);
-	}
-	
-	public function addSASS($dir) {
-		$this->localSASS[] = $dir;
-		return $this;
-	}
-
-
-	public function addJS($dir) {
-		$this->localJS[] = $dir;
-		return $this;
-	}
-
-	public function addMove($dir) {
-		$this->localMove[] = $dir;
-		return $this;
-	}
-
-
-	public function addImage($dir) {
-		$this->localImage[] = $dir;
-		return $this;
-	}
-	public function setRemoteSASS($remoteSASS) {
-		$this->remoteSASS = $remoteSASS;
-		return $this;
-	}
-
-	public function setRemoteJS($remoteJS) {
-		$this->remoteJS = $remoteJS;
-		return $this;
-	}
-
-	public function setRemoteImage($remoteImage) {
-		$this->remoteImage = $remoteImage;
-		return $this;
-	}
+	}	
 
 	public function setCompress($compress) {
 		$this->compress = $compress;
 		return $this;
 	}
-
-
-
+	
+	public function addLocalStatic($type, $dirs) {
+		$this->localStatic[$type][] = $dirs;
+		return $this;
+	}
+	
+	public function setRemoteStatic($type, $dir) {
+		$this->remoteStatic[$type] = $dir;
+		return $this;
+	}
+	
+	public function addCopy($dir) {
+		$this->localCopy[] = $dir;
+		return $this;
+	}
 // </editor-fold>
 }

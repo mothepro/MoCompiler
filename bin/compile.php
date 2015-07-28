@@ -195,21 +195,18 @@ $c->setCompress($check('compress'));
 $c->setSilent($check('silent'));
 
 // add directories
-if($check('local', 'sass'))	
-	foreach($check('local', 'sass')	as $dir)
-		$c->addSASS($dir);
-
-if($check('local', 'js'))	
-	foreach($check('local', 'js') 	as $dir)
-		$c->addJS($dir);
-
-if($check('local', 'img'))
-	foreach($check('local', 'img') 	as $dir)
-		$c->addImage($dir);
+if($check('project', 'files'))
+	foreach($check('project', 'files') as $dir)
+		$c->addCopy($dir);
 
 if($check('upload'))
-	foreach($check('upload') 		as $dir)
-		$c->addMove($dir);
+	foreach($check('upload') as $type => $dirs)
+		foreach($dirs as $dir)
+			$c->addLocalStatic($type, $dir);
+
+if($check('download'))
+	foreach($check('download') as $type => $dir)
+		$c->setRemoteStatic($type, $dir);
 
 // misc
 if($check('project', 'local'))	$c->setLocal($check('project', 'local'));
@@ -222,11 +219,6 @@ if($check('s3', 'key') && $check('s3', 'key'))
 		$check('s3', 'key'),
 		$check('s3', 'secret')
 	);
-
-// remote
-if($check('remote', 'sass'))	$c->setRemoteSASS($check('remote', 'sass'));
-if($check('remote', 'js'))		$c->setRemoteJS($check('remote', 'js'));
-if($check('remote', 'img'))		$c->setRemoteImage($check('remote', 'img'));
 
 // start
 $c->compile();
