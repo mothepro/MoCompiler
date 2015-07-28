@@ -42,8 +42,7 @@ Mo's PHP Project Compiler!
 	Optional Options
 	
 		-l	--project-local		Local Directory to load project [Working Directory]
-		
-			--upload			Directories to move from local to remote
+			--project-files		Directories to move from local to remote
 
 			--twig				Twig Template Directory
 			--apigen			Documentation Configuration
@@ -51,21 +50,23 @@ Mo's PHP Project Compiler!
 			--compress			Compress static files
 			--quiet				Silent mode
 
-			--local-sass		Local SASS Directory
-			--local-js			Local JS Directory
-			--local-img			Local Image Directory
+			--upload-sass		Local SASS Directory
+			--upload-js			Local JS Directory
+			--upload-img		Local Image Directory
+			--upload-*			Local Static Directory
 
 			--s3-key			Amazon S3 Access Key Activates compression
 			--s3-secret			Amazon S3 Secret Key
 
-			--remote-sass		Remote Directory to save sass on server or S3
-			--remote-js			Remote Directory to save js on server or S3
-			--remote-img		Remote Directory to save images on server or S3
-
-	Composer Packages for Compression & Uploading
-		tpyo/amazon-s3-php-class
-		apigen/apigen
-		nette/neon
+			--download-sass		Remote Directory to save sass on server or S3
+			--download-js		Remote Directory to save js on server or S3
+			--download-img		Remote Directory to save images on server or 
+			--download-*		Remote Static Directory to match --local-*
+	
+			--hooks-post		Remote Commands to run after uploading
+	
+			--constants			List of constants used throughout app
+			--constantsOutput	Where to save new constants
 HELP;
 };
 
