@@ -131,7 +131,7 @@ class Constants {
 	}
 	
 	protected static function encode($val) {
-		$ret = json_encode($val);
+		$ret = var_export($val, true);
 				
 		if($val instanceof \Nette\Neon\Entity)
 			$ret = \Nette\Neon\Neon::encode($val);

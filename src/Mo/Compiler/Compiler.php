@@ -154,7 +154,7 @@ class Compiler {
 
 
 		if (!$this->silent)
-			echo PHP_EOL, str_repeat("\t", $this->status->count() - 1), $message, "\t... ";
+			echo PHP_EOL, str_repeat("\t", $this->status->count() - 1), $message, '... ';
 
 
 		return $this;
