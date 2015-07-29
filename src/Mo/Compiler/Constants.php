@@ -76,7 +76,7 @@ class Constants {
 		foreach($arr as $name => $val) {
 			// remove public prefix
 			if(substr($name, 0, strlen(self::PUB_PREFIX)) === self::PUB_PREFIX)
-				$name = substr($name, 1)
+				$name = substr($name, strlen(self::PUB_PREFIX));
 				
 			// there is more
 			if(is_array($val))
@@ -97,7 +97,7 @@ class Constants {
 			
 			// make public?
 			if(substr($name, 0, strlen(self::PUB_PREFIX)) === self::PUB_PREFIX) {
-				$name = substr($name, 1);
+				$name = substr($name, strlen(self::PUB_PREFIX));
 				$pub = true;
 			}
 				
