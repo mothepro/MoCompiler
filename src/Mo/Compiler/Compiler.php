@@ -386,17 +386,12 @@ class Compiler {
 					exec('attrib +H ' . escapeshellarg($file));
 
 					// get the URL Constants
-					$urls = array();
-					foreach ($GLOBALS["constants"] as $name => $val) {
-						if(!is_array($val))
-							$urls[] = '$const-' . strtolower($name) . ': \'' . $val . '\' !default;';
-						else
-							foreach($val as $meth => $trueVal)
-								$urls[] = '$const-'. strtolower($name) .'-'. strtolower($meth) .': \''. $trueVal .'\' !default;'; // $bootstrap-sass-asset-helper: (function-exists(twbs-font-path)) !default;
-					}
+					$const = array();
+					foreach ($GLOBALS["constants"] as $name => $val)
+						$const[] = '$const-' . str_replace('\\', '-', strtolower($name)) . ': \'' . $val . '\' !default;';
 					
 					// add URL vars to temp sass file
-					fwrite($f, implode(PHP_EOL, $urls));
+					fwrite($f, implode(PHP_EOL, $const));
 					fwrite($f, file_get_contents($file));
 					fclose($f);
 				}
@@ -591,7 +586,6 @@ class Compiler {
 // </editor-fold>
 
 	/**
-	 * @todo more control over static dirs
 	 * Uploads to S3 or remote server
 	 */
 	protected function upload() {

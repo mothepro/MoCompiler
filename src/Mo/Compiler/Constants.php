@@ -27,7 +27,6 @@ namespace Mo\Compiler;
 
 /**
  * Converts array of constants to a PHP file of constants
- * @todo support for recursive class constant member names
  *
  * @author Maurice Prosper <maurice.prosper@ttu.edu>
  */
@@ -100,12 +99,13 @@ class Constants {
 				$name = substr($name, strlen(self::PUB_PREFIX));
 				$pub = true;
 			}
-				
+			
 			// there is more
 			if(is_array($val))
-				foreach(self::findPublic($val, $pub) as $newName => $newVal)
+				foreach(self::findPublic($val, $pub) as $newName => $newVal) {
 					if($pub)
 						$ret[ $name . self::NAMESPACE_SEPERATOR . $newName ] = $newVal;
+				}
 			elseif($pub)
 				$ret[ $name ] = $val;
 		}
@@ -130,6 +130,12 @@ class Constants {
 		foreach($this->const as $name => $val)
 			$str[] = 'define("'. self::nameEncode($name) .'", '. self::encode($val) .');';
 
+		// encode public array
+		$tmp = array();
+		foreach($this->public as $k => $v)
+			$tmp[ self::nameEncode ($k) ] = $v;
+		$this->public = $tmp;
+		
 		// how should I do this?
 		$str[] = '$GLOBALS["constants"] = '. var_export($this->public, true) .';';
 		
@@ -149,13 +155,13 @@ class Constants {
 		$names = explode(self::NAMESPACE_SEPERATOR, $name);
 		
 		// First letter
-		foreach($names as $k => $v)
-			$v = ucfirst(strtolower($v));
+		foreach($names as $k => &$v)
+			$v = strtoupper ($v); // ucfirst(strtolower($v));
 		
 		// WHOLE WORD
-		$names[ $k ] = strtoupper($v);
+		//$v = strtoupper($v);
 		
-		return implode(self::NAMESPACE_SEPERATOR, $names);
+		return self::NAMESPACE_SEPERATOR . implode(self::NAMESPACE_SEPERATOR, $names);
 	}
 
 	/**
