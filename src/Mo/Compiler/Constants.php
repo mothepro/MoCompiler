@@ -161,7 +161,7 @@ class Constants {
 		// WHOLE WORD
 		//$v = strtoupper($v);
 		
-		return self::NAMESPACE_SEPERATOR . implode(self::NAMESPACE_SEPERATOR, $names);
+		return implode(self::NAMESPACE_SEPERATOR, $names);
 	}
 
 	/**
