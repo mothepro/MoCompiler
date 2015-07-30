@@ -244,7 +244,7 @@ class Compiler {
 			foreach ($files as $file)
 
 				if ($file->isDir())
-					rmdir($file->getRealPath());
+					self::wipeDir($file->getRealPath(), true); //rmdir($file->getRealPath());
 				else
 					unlink($file->getRealPath());
 
