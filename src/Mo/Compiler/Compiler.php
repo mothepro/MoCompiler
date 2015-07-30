@@ -551,15 +551,21 @@ class Compiler {
 
 	/**
 	 * Run some commands on the remote server
-	 * @param string $command commands to run
+	 * @param string|array $command commands to run
 	 * @return \Compiler this
 	 */
 	private function runRemote($command) {
+		// make commands a list
+		if (!is_array($command))
+			$command = array($command);
+		$command = strval(implode(';', $command));
+		
 		return $this->runLocal(['plink',
-					'-ssh', //
-					'-i', $this->ppk, // Private key file to access server
-					$this->host, // username and hostname to connect to
-					'"' . strval($command) . '"', // Commands to run
+					'-ssh',					// interacting method
+					'-i', $this->ppk,		// Private key file to access server
+					$this->host,			// username and hostname to connect to
+			
+					'"' . $command . '"',	// Commands to run
 		]);
 	}
 
@@ -732,9 +738,12 @@ class Compiler {
 		$this	->start('Updating Server Enviroment');
 		
 			// reset file permissions
-			if(!isset($this->s3))
+			if(!isset($this->s3)) {
+				$cmd = array();
 				foreach($this->remoteStatic as $type => $path)
-					$this->runRemote('chmod 774 -R '. $path);
+					$cmd = 'chmod 774 -R '. $path;
+				$this->runRemote( $cmd );
+			}
 		
 		$this	->finish();
 		
@@ -743,13 +752,8 @@ class Compiler {
 			$this->addHook('composer update --no-dev -d '. $this->remoteProj); // -o [optimize autoloader]
 			
 		// hooks
-		if(isset($this->hook['post'])) {
-			$this->start("Running Last Hook");
-			
-			foreach($this->hook['post'] as $cmd)
-				$this->runRemote ($cmd);
-			$this->finish();
-		}
+		if(isset($this->hook['post']))
+			$this->start("Running Last Hook")->runRemote ($this->hook['post'])->finish();
 
 		// clean up
 		$this	->start('Cleaning up');
