@@ -331,7 +331,7 @@ class Compiler {
 		$this->finish();
 
 		$this->addLocalStatic('js', $output);
-		$this->addCopy($this->localTpl);
+		//$this->addCopy($this->localTpl);
 	}
 
 
@@ -588,7 +588,7 @@ class Compiler {
 	/**
 	 * Uploads to S3 or remote server
 	 */
-	protected function upload() {
+	protected function uploadStatic() {
 		// copy to all destination folders
 		foreach($this->remoteStatic as $type => $destDir) {
 			
@@ -681,13 +681,14 @@ class Compiler {
 		if(isset($this->localProj) && is_dir($this->localProj))
 			chdir($this->localProj);
 		
+		// documentation
+		if(isset($this->localDoc))
+			$this->makeDoc();
+		
 		// twig templates
 		if(isset($this->localTpl))
 			$this->makeTpl();
 		
-		// documentation
-		if(isset($this->localDoc))
-			$this->makeDoc();
 		
 		// static files
 		$localStatic = self::path(sys_get_temp_dir()) . 'data' . time() . DIRECTORY_SEPARATOR;
@@ -703,21 +704,28 @@ class Compiler {
 		}
 
 		// run through static files then upload them
-		$this->upload();
+		$this->uploadStatic();
 
 		// upload project
-		foreach($this->localCopy as $name) {
-			$this	->start('Uploading Project '. $name)
-						->runLocal(['pscp',
-							'-r',									// copy recursively
-							'-sftp',								// for use of SFTP protocal
-							'-C',									// enable compression
-							'-i '. $this->ppk,						// Private key file to access server
-							$this->localProj . $name,				// Directory to upload
-							$this->host .':'. $this->remoteProj,	// host:path on server to save data
-						])
-					->finish();
-		}
+		$cmd = [
+			'pscp',
+			//'-p',									// preserve attributes
+			'-r',									// copy recursively
+			'-q',									// silent
+			//'-sftp',								// for use of SFTP protocal
+			'-batch',								// non interactive
+			'-C',									// enable compression
+			'-i', $this->ppk,						// Private key file to access server
+		];
+		
+		// Directory to upload
+		foreach($this->localCopy as $name)
+				$cmd[] = $this->localProj . $name;
+		
+		// host:path on server to save data
+		$cmd[] = $this->host .':'. $this->remoteProj;
+		
+		$this->start('Uploading Project')->runLocal($cmd)->finish();
 
 		// config
 		$this	->start('Updating Server Enviroment');
