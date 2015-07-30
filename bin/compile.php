@@ -201,9 +201,13 @@ if($check('project', 'files'))
 		$c->addCopy($dir);
 
 if($check('upload'))
-	foreach($check('upload') as $type => $dirs)
-		foreach($dirs as $dir)
-			$c->addLocalStatic($type, $dir);
+	foreach($check('upload') as $type => $dirs) {
+		if(!is_array($dirs))
+			$c->addLocalStatic($type, $dirs);
+		else
+			foreach($dirs as $dir)
+				$c->addLocalStatic($type, $dir);
+	}
 
 if($check('download'))
 	foreach($check('download') as $type => $dir)

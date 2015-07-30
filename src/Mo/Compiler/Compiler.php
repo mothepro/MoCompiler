@@ -702,12 +702,15 @@ class Compiler {
 		$this->wipe[] = $localStatic;
 		
 		foreach($this->remoteStatic as $type => $trash) {
-			$this->tmp[ $type ] = $localStatic . $type . DIRECTORY_SEPARATOR;
-			self::readyDir( $this->tmp[ $type ] );
-			
-			// process static files
-			if(method_exists($this, $type))
+			if(method_exists($this, $type)) {
+				$this->tmp[ $type ] = $localStatic . $type . DIRECTORY_SEPARATOR;
+				self::readyDir( $this->tmp[ $type ] );
+
+				// process static files
 				$this->$type();
+				
+			} else // just moved the folder
+				$this->tmp[ $type ] = self::path(current ($this->localStatic[ $type ]));
 		}
 
 		// run through static files then upload them
