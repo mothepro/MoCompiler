@@ -751,10 +751,6 @@ class Compiler {
 			}
 		
 		$this	->finish();
-		
-		// run composer if added
-		if(in_array('composer.json', $this->localCopy))
-			$this->addHook('composer update --no-dev -d '. $this->remoteProj); // -o [optimize autoloader]
 			
 		// hooks
 		if(isset($this->hook['post']))
