@@ -313,6 +313,7 @@ class Compiler {
 	private function makeTpl() {
 		$this->start('Creating JS Templates from ' . $this->localTpl);
 
+		$this->localTpl = rtrim($this->localTpl, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
 		$this->wipe[] = $output = self::path(sys_get_temp_dir()) . 'twigjs' . time() . DIRECTORY_SEPARATOR;
 
 		foreach (self::rglob($this->localTpl . '*.twig') as $file) {
@@ -325,7 +326,7 @@ class Compiler {
 			];
 			
 			self::readyDir($output . $file);
-			file_put_contents($output . $file, 'twig('. json_encode($data) .');');
+			file_put_contents($output . $file . '.js', 'twig('. json_encode($data) .');');
 		}
 
 		$this->finish();
