@@ -650,7 +650,7 @@ class Compiler {
 						[
 							'Content-Type'		=> $mime,
 							'Cache-Control'		=> 'max-age=315360000',
-							'Expires'			=> 'Thu, 31 Dec 2037 23:55:55 GMT', //gmdate('D, d M Y H:i:s T', strtotime('+5 years'))
+							'Expires'			=> 'Thu, 31 Dec 2037 23:55:55 GMT', //gmdate(DateTime::RFC1123, strtotime('+5 years'))
 							'Vary'				=> 'Accept-Encoding',
 							'Content-Encoding'	=> 'gzip',
 							'Content-Length'	=> mb_strlen($data, '8bit'),
@@ -716,7 +716,7 @@ class Compiler {
 		// upload project
 		$cmd = [
 			'pscp',
-			//'-p',									// preserve attributes
+			'-p',									// preserve attributes
 			'-r',									// copy recursively
 			'-q',									// silent
 			//'-sftp',								// for use of SFTP protocal
@@ -727,7 +727,7 @@ class Compiler {
 		
 		// Directory to upload
 		foreach($this->localCopy as $name)
-				$cmd[] = $this->localProj . $name;
+			$cmd[] = $this->localProj . $name;
 		
 		// host:path on server to save data
 		$cmd[] = $this->host .':'. $this->remoteProj;
@@ -740,8 +740,10 @@ class Compiler {
 			// reset file permissions
 			if(!isset($this->s3)) {
 				$cmd = array();
-				foreach($this->remoteStatic as $type => $path)
-					$cmd = 'chmod 774 -R '. $path;
+				foreach($this->remoteStatic as $type => $path) {
+					$cmd[] = 'chmod 774 -R '. $path;
+					// $cmd[] = 'chown mo:www-data -R '. $path;
+				}
 				$this->runRemote( $cmd );
 			}
 		
