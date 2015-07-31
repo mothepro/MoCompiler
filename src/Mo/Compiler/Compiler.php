@@ -738,19 +738,16 @@ class Compiler {
 		$this->start('Uploading Project')->runLocal($cmd)->finish();
 
 		// config
-		$this	->start('Updating Server Enviroment');
-		
+		if(!isset($this->s3) && !empty($this->remoteStatic)) {
 			// reset file permissions
-			if(!isset($this->s3)) {
-				$cmd = array();
-				foreach($this->remoteStatic as $type => $path) {
-					$cmd[] = 'chmod 774 -R '. $path;
-					// $cmd[] = 'chown mo:www-data -R '. $path;
-				}
-				$this->runRemote( $cmd );
+			$cmd = array();
+			foreach($this->remoteStatic as $type => $path) {
+				$cmd[] = 'chmod 774 -R '. $path;
+				// $cmd[] = 'chown mo:www-data -R '. $path;
 			}
-		
-		$this	->finish();
+			
+			$this->start('Updating Server Enviroment')->runRemote( $cmd )->finish();
+		}
 			
 		// hooks
 		if(isset($this->hook['post']))
