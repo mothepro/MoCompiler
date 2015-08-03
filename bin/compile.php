@@ -220,8 +220,12 @@ if($check('apigen'))			$c->setLocalDoc($check('apigen'));
 
 // hooks
 if($check('hooks'))
-	foreach($check('hooks') as $type => $dir)
-		$c->addHook($dir);
+	foreach($check('hooks') as $where => $more)
+		foreach($more as $when => $cmds) {
+			if(is_array($cmds))
+				foreach($cmds as $cmd)
+					$c->addHook($where, $when, $cmd);
+		}
 
 // S3
 if($check('s3', 'key') && $check('s3', 'key'))

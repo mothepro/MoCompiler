@@ -589,6 +589,24 @@ class Compiler {
 
 		return $this;
 	}
+	
+	/**
+	 * Runs all hooks for a given time
+	 * @param string $when time
+	 * @return \Mo\Compiler\Compiler
+	 */
+	private function applyHook($when) {
+		// run locals
+		if(isset($this->hook['local'][$when]))
+			foreach ($this->hook['local'][$when] as $cmd)
+				$this->runLocal($cmd);
+
+		// remote as batch
+		if(isset($this->hook['remote'][$when]))
+			$this->runRemote($this->hook['remote'][$when]);
+		
+		return $this;
+	}
 
 // </editor-fold>
 
@@ -688,6 +706,8 @@ class Compiler {
 		if(isset($this->localProj) && is_dir($this->localProj))
 			chdir($this->localProj);
 		
+		$this->start('Pre Hooks')->applyHook('pre')->finish();
+		
 		// documentation
 		if(isset($this->localDoc))
 			$this->makeDoc();
@@ -748,10 +768,8 @@ class Compiler {
 			
 			$this->start('Updating Server Enviroment')->runRemote( $cmd )->finish();
 		}
-			
-		// hooks
-		if(isset($this->hook['post']))
-			$this->start("Running Last Hook")->runRemote ($this->hook['post'])->finish();
+
+		$this->start('Post Hooks')->applyHook('post')->finish();
 
 		// clean up
 		$this	->start('Cleaning up');
@@ -826,8 +844,8 @@ class Compiler {
 		return $this;
 	}
 	
-	public function addHook($hook) {
-		$this->hook['post'][] = $hook;
+	public function addHook($where, $when, $hook) {
+		$this->hook[$where][$when][] = $hook;
 		return $this;
 	}
 
