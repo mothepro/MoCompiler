@@ -583,8 +583,9 @@ class Compiler {
 
 
 		// run
-		// echo "\n`$command`\n";
-		exec($command);
+		if($this->silent === 2)
+			echo "\n`$command`\n";
+		passthru($command);
 
 
 		return $this;
