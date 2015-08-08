@@ -128,7 +128,7 @@ class Constants {
 			$str[] = self::AUTOLOAD;
 		
 		foreach($this->const as $name => $val)
-			$str[] = 'define("\\'. self::nameEncode($name) .'", '. self::encode($val) .');';
+			$str[] = 'define("'. self::nameEncode($name) .'", '. self::encode($val) .');';
 
 		// encode public array
 		$tmp = array();
