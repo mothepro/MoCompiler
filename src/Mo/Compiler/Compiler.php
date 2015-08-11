@@ -622,46 +622,31 @@ class Compiler {
 			if(isset($this->s3)) {
 				foreach(self::rglob($this->tmp[ $type ] . '*') as $file) {
 					$info = new \SplFileInfo($file);
-					
 					$this->start('Putting '. $info->getBasename() .' on '. $destDir);
-
+					
+					// get mime
+					$finfo = finfo_open(FILEINFO_MIME_TYPE);
+					$mime = finfo_file($finfo, $file);
+					finfo_close($finfo);
+					
+					// headers
+					$headers = [
+						'Content-Type'		=> $mime,
+						'Cache-Control'		=> 'max-age=315360000',
+						'Expires'			=> 'Thu, 31 Dec 2037 23:55:55 GMT', //gmdate(DateTime::RFC1123, strtotime('+5 years'))
+						'Vary'				=> 'Accept-Encoding',
+						'Content-Length'	=> mb_strlen($data, '8bit'),
+					];
+					
 					$data = file_get_contents($file);
-					$data = gzencode($data, 9);
-
-					switch ($info->getExtension()) {
-					case 'css':
-						$mime = 'text/css';
-						break;
-					case 'js':
-						$mime = 'application/javascript';
-						break;
-					case 'json':
-						$mime = 'application/json';
-						break;
-					case 'png':
-						$mime = 'image/png';
-						break;
-					case 'gif':
-						$mime = 'image/gif';
-						break;
-					case 'jpg':
-					case 'jpeg':
-						$mime = 'image/jpeg';
-						break;
-					case 'svg':
-						$mime = 'image/svg+xml';
-						break;
-					case 'bmp':
-						$mime = 'image/x-ms-bmp';
-						break;
-					default:
-						$mime = 'text/plain';
-						break;
+						
+					// gzip
+					if(substr($mime, 0, 5) === 'text/'
+					|| $mime === 'application/javascript'
+					|| $mime === 'application/json') {
+						$data = gzencode($data, 9);
+						$headers['Content-Encoding'] = 'gzip';
 					}
-					// full MIME type
-					//$mime = 'text/' . $type;
-					//if($type === 'js')
-					//	$mime = 'text/javascript';
 
 					$this->s3->putObject(
 						$data,
@@ -669,14 +654,7 @@ class Compiler {
 						$info->getBasename(),
 						\S3::ACL_PUBLIC_READ,
 						array(),
-						[
-							'Content-Type'		=> $mime,
-							'Cache-Control'		=> 'max-age=315360000',
-							'Expires'			=> 'Thu, 31 Dec 2037 23:55:55 GMT', //gmdate(DateTime::RFC1123, strtotime('+5 years'))
-							'Vary'				=> 'Accept-Encoding',
-							'Content-Encoding'	=> 'gzip',
-							'Content-Length'	=> mb_strlen($data, '8bit'),
-						]
+						$headers
 					);
 
 					$this->finish();
