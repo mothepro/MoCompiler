@@ -323,19 +323,16 @@ class Compiler {
 
 		$this->localTpl = rtrim($this->localTpl, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
 		$this->wipe[] = $output = self::path(sys_get_temp_dir()) . 'twigjs' . time() . DIRECTORY_SEPARATOR;
-
+		
+		$data = array();
+		
 		foreach (self::rglob($this->localTpl . '*.twig') as $file) {
 			$id = substr($file, strlen($this->localTpl));
-			$tpl = file_get_contents($file);
-			
-			$data = [
-				'id'	=> $id,
-				'data'	=> $tpl,
-			];
-			
-			self::readyDir($output . $file);
-			file_put_contents($output . $file . '.js', 'twig('. json_encode($data) .');');
+			$data[ $id ] = file_get_contents($file);
 		}
+		
+		self::readyDir($output . $file);
+		file_put_contents($output . $file . '.js', 'var templates = '. json_encode($data) .';');
 
 		$this->finish();
 
