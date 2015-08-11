@@ -583,7 +583,7 @@ class Compiler {
 
 
 		// run
-//		if($this->silent === 2)
+		if($this->silent === 2)
 			echo "\n`$command`\n";
 		passthru($command);
 
