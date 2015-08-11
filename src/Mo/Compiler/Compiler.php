@@ -583,7 +583,7 @@ class Compiler {
 
 
 		// run
-		if($this->silent === 2)
+//		if($this->silent === 2)
 			echo "\n`$command`\n";
 		passthru($command);
 
@@ -635,6 +635,9 @@ class Compiler {
 					case 'js':
 						$mime = 'application/javascript';
 						break;
+					case 'json':
+						$mime = 'application/json';
+						break;
 					case 'png':
 						$mime = 'image/png';
 						break;
@@ -679,18 +682,23 @@ class Compiler {
 					$this->finish();
 				}
 			} else {
-				$this	->start('Uploading Static '. $type .' to '. $destDir)
+				$this	->start('Local object '. $type .' -> '. $destDir)
 //						->runRemote('rm -r '. $destDir .'; mkdir -p '. $destDir)
 						->runLocal(['pscp',
-							'-r',						// copy recursively
-							'-sftp',					// for use of SFTP protocal
-							'-C',						// enable compression
+							'-p',									// preserve attributes
+							'-r',									// copy recursively
+							'-q',									// silent
+							//'-sftp',								// for use of SFTP protocal
+							'-batch',								// non interactive
+							'-C',									// enable compression
 							'-i', $this->ppk,			// Private key file to access server
-							$this->tmp[ $type ],		// Directory to upload
+							'"'. rtrim($this->tmp[ $type ], DIRECTORY_SEPARATOR) .'"', // Directory to upload
 							$this->host .':'. $destDir,	// host:path on server to save data
 						])->finish();
 			}
 		}
+		
+		return $this;
 	}
 
 	/**
@@ -735,7 +743,7 @@ class Compiler {
 		}
 
 		// run through static files then upload them
-		$this->uploadStatic();
+		$this->start('Uploading Static')->uploadStatic()->finish();
 
 		// upload project
 		$cmd = [
@@ -751,7 +759,7 @@ class Compiler {
 		
 		// Directory to upload
 		foreach($this->localCopy as $name)
-			$cmd[] = '"'. $this->localProj . $name .'"';
+			$cmd[] = '"'. rtrim ($this->localProj . $name, DIRECTORY_SEPARATOR) .'"';
 		
 		// host:path on server to save data
 		$cmd[] = $this->host .':'. $this->remoteProj;
