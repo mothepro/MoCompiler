@@ -254,6 +254,14 @@ class Compiler {
 		}
 	}
 
+	/**
+	 * A File or Dir ready to be put in the command line
+	 * @param string $dir
+	 * @return string
+	 */
+	protected final static function safeDir($dir) {
+		return '"'. addslashes($dir) .'"';
+	}
 // </editor-fold>
 	
 	// <editor-fold defaultstate="collapsed" desc="Testing">
@@ -562,7 +570,7 @@ class Compiler {
 		
 		return $this->runLocal(['plink',
 					'-ssh',					// interacting method
-					'-i', $this->ppk,		// Private key file to access server
+					'-i', static::safeDir($this->ppk),		// Private key file to access server
 					$this->host,			// username and hostname to connect to
 			
 					'"' . $command . '"',	// Commands to run
@@ -669,8 +677,8 @@ class Compiler {
 							//'-sftp',								// for use of SFTP protocal
 							'-batch',								// non interactive
 							'-C',									// enable compression
-							'-i', $this->ppk,			// Private key file to access server
-							'"'. addslashes($this->tmp[ $type ]) .'"', // Directory to upload
+							'-i', static::safeDir($this->ppk),		// Private key file to access server
+							static::safeDir($this->tmp[ $type ]),	// Directory to upload
 							$this->host .':'. $destDir,	// host:path on server to save data
 						])->finish();
 			}
@@ -732,12 +740,12 @@ class Compiler {
 			//'-sftp',								// for use of SFTP protocal
 			'-batch',								// non interactive
 			'-C',									// enable compression
-			'-i', $this->ppk,						// Private key file to access server
+			'-i', static::safeDir($this->ppk),						// Private key file to access server
 		];
 		
 		// Directory to upload
 		foreach($this->localCopy as $name)
-			$cmd[] = '"'. addslashes ($this->localProj . $name) .'"';
+			$cmd[] = static::safeDir($this->localProj . $name);
 		
 		// host:path on server to save data
 		$cmd[] = $this->host .':'. $this->remoteProj;
