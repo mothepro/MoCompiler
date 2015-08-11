@@ -45,7 +45,7 @@ class Constants {
 	
 	/**
 	 *
-	 * @var mixed[]
+	 * @var string[]
 	 */
 	private $ini = array();
 
@@ -58,6 +58,11 @@ class Constants {
 	 * Namespace Seperator in PHP
 	 */
 	const NAMESPACE_SEPERATOR = '\\';
+
+	/**
+	 * INI Group in PHP
+	 */
+	const INI_SEPERATOR = '.';
 	
 	/**
 	 * Public Modifier Prefix
@@ -65,6 +70,11 @@ class Constants {
 	const PUB_PREFIX = '+';
 
 	public function __construct(array $const) {
+		if(isset($const['ini'])) {
+			$this->ini = self::nameVals($const['ini']);
+			unset($const['ini']);
+		}
+		
 		$this->const = self::nameVals($const);
 		$this->public = self::findPublic($const);
 	}
@@ -128,12 +138,15 @@ class Constants {
 			$str[] = self::AUTOLOAD;
 		
 		foreach($this->const as $name => $val)
-			$str[] = 'define("'. self::nameEncode($name) .'", '. self::encode($val) .');';
+			$str[] = 'define("'. self::nameEncode($name, self::NAMESPACE_SEPERATOR) .'", '. self::encode($val) .');';
+		
+		foreach($this->ini as $name => $val)
+			$str[] = 'ini_set("'. self::nameEncode($name, self::INI_SEPERATOR) .'", '. self::encode($val) .');';
 
 		// encode public array
 		$tmp = array();
 		foreach($this->public as $k => $v)
-			$tmp[ self::nameEncode ($k) ] = $v;
+			$tmp[ self::nameEncode ($k, self::NAMESPACE_SEPERATOR) ] = $v;
 		$this->public = $tmp;
 		
 		// how should I do this?
@@ -151,8 +164,8 @@ class Constants {
 		return $ret;
 	}
 	
-	protected static function nameEncode($name) {
-		$names = explode(self::NAMESPACE_SEPERATOR, $name);
+	protected static function nameEncode($name, $sep) {
+		$names = explode($sep, $name);
 		
 		// First letter
 		foreach($names as $k => &$v)
@@ -161,31 +174,6 @@ class Constants {
 		// WHOLE WORD
 		//$v = strtoupper($v);
 		
-		return implode(self::NAMESPACE_SEPERATOR, $names);
-	}
-
-	/**
-	 * @todo Make this work!
-	 * test1:
-	 *		simple: data
-	 *		test2:
-	 *			test3a: good
-	 *			test3b:
-	 *				ok: 123
-	 *
-	 * test1:test2_test3a = good
-	 * test1:test2_test3b_ok = 123 
-	 * @param array $arr
-	 */
-	private static function classConst(array $arr) {
-		foreach($arr as $k => $v) {
-			if(is_array($v))
-				list($const, $more) = self::classConst($v);
-			$const = $k .'_'. $const;
-		}
-		
-		//$a = function() use($a) {
-		//	if(is_array($arr))
-		//}
+		return implode($sep, $names);
 	}
 }
