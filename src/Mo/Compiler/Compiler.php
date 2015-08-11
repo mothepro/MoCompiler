@@ -751,7 +751,7 @@ class Compiler {
 		
 		// Directory to upload
 		foreach($this->localCopy as $name)
-			$cmd[] = $this->localProj . $name;
+			$cmd[] = '"'. $this->localProj . $name .'"';
 		
 		// host:path on server to save data
 		$cmd[] = $this->host .':'. $this->remoteProj;
