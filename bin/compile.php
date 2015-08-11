@@ -1,4 +1,9 @@
 <?php
+/**
+ * @todo options override neon
+ * @todo hooks run at start & finish
+ * @todo all pathnames are safe
+ */
 require 'vendor/autoload.php';
 
 /*
