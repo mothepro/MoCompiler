@@ -692,7 +692,7 @@ class Compiler {
 							'-batch',								// non interactive
 							'-C',									// enable compression
 							'-i', $this->ppk,			// Private key file to access server
-							'"'. rtrim($this->tmp[ $type ], DIRECTORY_SEPARATOR) .'"', // Directory to upload
+							'"'. addslashes($this->tmp[ $type ]) .'"', // Directory to upload
 							$this->host .':'. $destDir,	// host:path on server to save data
 						])->finish();
 			}
@@ -759,7 +759,7 @@ class Compiler {
 		
 		// Directory to upload
 		foreach($this->localCopy as $name)
-			$cmd[] = '"'. rtrim ($this->localProj . $name, DIRECTORY_SEPARATOR) .'"';
+			$cmd[] = '"'. addslashes ($this->localProj . $name) .'"';
 		
 		// host:path on server to save data
 		$cmd[] = $this->host .':'. $this->remoteProj;
