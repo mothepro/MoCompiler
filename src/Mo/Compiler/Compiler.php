@@ -389,10 +389,7 @@ class Compiler {
 	 * @return type
 	 */
 	protected final static function path($name) {
-		$dir = rtrim(realpath($name), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
-		if(!is_file($dir))
-			$dir = null;
-		return $dir;
+		return rtrim(realpath($name), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
 	}
 
 
@@ -892,7 +889,7 @@ class Compiler {
 					$this->tmp[ $type ] = self::path(current ($this->localStatic[ $type ]));
 					
 					// remove if not there
-					if(empty($this->tmp[ $type ])) 
+					if(!is_file($this->tmp[ $type ])) 
 						unset ($this->remoteStatic[ $type ]);
 			}
 		}
