@@ -561,6 +561,7 @@ class Compiler {
 				
 				// Add Constants variables 
 				if(isset($GLOBALS["constants"])) {
+					$old = $file;
 					// sass which will actuall be compiled [hidden]
 					$file .= md5(time()) . '.sex';
 					$f = fopen($file, 'w');
@@ -573,12 +574,12 @@ class Compiler {
 					
 					// add URL vars to temp sass file
 					fwrite($f, implode(PHP_EOL, $const));
-					fwrite($f, file_get_contents($file));
+					fwrite($f, file_get_contents($old));
 					fclose($f);
 				}
 				
 				// the correct path for output
-				$output = $this->tmp[ __FUNCTION__ ] . $output;
+				echo $output = $this->tmp[ __FUNCTION__ ] . $output;
 				$output = substr($output, 0, -4) . 'css';
 
 				// make sure path is ready
