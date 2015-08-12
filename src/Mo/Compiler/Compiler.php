@@ -98,12 +98,16 @@ class Compiler {
 	private $localCopy;
 	
 	/**
-	 * Remote hooks to run
-	 * [when][command]
+	 * Hooks to run
 	 * 
-	 * @var string[][]
+	 * $hookWhenLocation
+	 * 
+	 * @var string[]
 	 */
-	private $hook = array();
+	private $hookPreLocal	= array();
+	private $hookPreRemote	= array();
+	private $hookPostLocal	= array();
+	private $hookPostRemote	= array();
 
 	/**
 	 * Local path to static data
@@ -164,12 +168,34 @@ class Compiler {
 	 * Report current action being taken
 	 * @param string $message
 	 */
-	private function start($message) {
+	private function start($message, $hook = true) {
 		if (!isset($this->status))
 			$this->status = new \SplStack;
 
 
 		$this->status->push(microtime(true));
+		
+		if($hook) {
+			// look for local commands
+			foreach($this->hookPreLocal as $name => $cmds) {
+				if(stripos($message, $name) !== false) { // these are the hooks to run
+					$this->start('Before ' . $message, false);
+					foreach ($cmds as $cmd)
+						$this->runLocal ($cmd);
+					$this->finish(false);
+				}
+			}
+			
+			// look for remote commands
+			foreach($this->hookPreRemote as $name => $cmds) {
+				if(stripos($message, $name) !== false) { // these are the hooks to run
+					$this->start('Before ' . $message, false);
+					foreach ($cmds as $cmd)
+						$this->runRemote($cmd);
+					$this->finish(false);
+				}
+			}
+		}
 
 
 		if ($this->verbose >= 1)
@@ -182,11 +208,32 @@ class Compiler {
 	/**
 	 * Finish report
 	 */
-	private function finish() {
+	private function finish($hook = true) {
 		$begin = $this->status->pop();
 		$end = microtime(true);
-
-
+		
+		if($hook) {
+			// look for local commands
+			foreach($this->hookPostLocal as $name => $cmds) {
+				if(stripos($message, $name) !== false) { // these are the hooks to run
+					$this->start('After ' . $message, false);
+					foreach ($cmds as $cmd)
+						$this->runLocal ($cmd);
+					$this->finish(false);
+				}
+			}
+			
+			// look for remote commands
+			foreach($this->hookPostRemote as $name => $cmds) {
+				if(stripos($message, $name) !== false) { // these are the hooks to run
+					$this->start('After ' . $message, false);
+					foreach ($cmds as $cmd)
+						$this->runRemote($cmd);
+					$this->finish(false);
+				}
+			}
+		}
+		
 		if ($this->verbose >= 2)
 			echo PHP_EOL, str_repeat("\t", $this->status->count()), ' > ', number_format($end - $begin, 4), ' seconds';
 
@@ -600,25 +647,6 @@ class Compiler {
 
 		return $this;
 	}
-	
-	/**
-	 * Runs all hooks for a given time
-	 * @param string $when time
-	 * @return \Mo\Compiler\Compiler
-	 */
-	private function applyHook($when) {
-		// run locals
-		if(isset($this->hook['local'][$when]))
-			foreach ($this->hook['local'][$when] as $cmd)
-				$this->runLocal($cmd);
-
-		// remote as batch
-		if(isset($this->hook['remote'][$when]))
-			$this->runRemote($this->hook['remote'][$when]);
-		
-		return $this;
-	}
-
 // </editor-fold>
 
 	/**
@@ -703,8 +731,6 @@ class Compiler {
 		if(isset($this->localProj) && is_dir($this->localProj))
 			chdir($this->localProj);
 		
-		$this->start('Pre Hooks')->applyHook('pre')->finish();
-		
 		// documentation
 		if(isset($this->localDoc))
 			$this->makeDoc();
@@ -765,8 +791,6 @@ class Compiler {
 			
 			$this->start('Updating Server Enviroment')->runRemote( $cmd )->finish();
 		}
-
-		$this->start('Post Hooks')->applyHook('post')->finish();
 
 		// clean up
 		$this	->start('Cleaning up');
@@ -841,8 +865,9 @@ class Compiler {
 		return $this;
 	}
 	
-	public function addHook($where, $when, $hook) {
-		$this->hook[$where][$when][] = $hook;
+	public function addHook($when, $prepost, $where, $hook) {
+		$name = 'hook' . ucfirst(strtolower($prepost)) . ucfirst(strtolower($where));
+		$this->$name[$when][] = $hook;
 		return $this;
 	}
 
