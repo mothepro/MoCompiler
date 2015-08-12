@@ -150,10 +150,15 @@ if($error || isset($opt['h']) || isset($opt['help'])) {
 }
 
 // make the constant
-if($check('constants') && $check('constantOutput')) {
+if($check('constants')) {
 	$c = new Mo\Compiler\Constants($check('constants'));
-	$c->write($check('constantOutput'), true);
-	require $check('constantOutput');
+	
+	$cFile = $check('constantOutput');
+	if(empty($cFile))
+		$cFile = tempnam(sys_get_temp_dir(), 'FOO');
+	
+	$c->write($cFile, true);
+	require $cFile;
 }
 
 // start the compiler
