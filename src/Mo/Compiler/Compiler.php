@@ -171,11 +171,14 @@ class Compiler {
 	private function start($message, $hook = true) {
 		if (!isset($this->status))
 			$this->status = new \SplStack;
-		
+
 		if($hook)
 			$this->applyHooks ('Pre', $message);
 		
-		$this->status->push(microtime(true));
+		$this->status->push([
+			microtime(true),
+			$message,
+		]);
 
 		if ($this->verbose >= 1)
 			echo PHP_EOL, str_repeat("\t", $this->status->count() - 1), $message, '... ';
@@ -188,7 +191,7 @@ class Compiler {
 	 * Finish report
 	 */
 	private function finish($hook = true) {
-		$begin = $this->status->pop();
+		list($begin, $message) = $this->status->pop();
 		$end = microtime(true);
 		
 		if ($this->verbose >= 2)
@@ -210,7 +213,7 @@ class Compiler {
 				
 				// MATCH - these are the hooks to run
 				if(stripos($message, $name) !== false) {
-					$this->start('After ' . $message, false);
+					$this->start(($prepost === 'Pre' ? 'Before' : 'After') .' '. $message, false);
 					foreach ($cmds as $cmd)
 						$this->runLocal ($cmd);
 					$this->finish(false);
@@ -847,7 +850,7 @@ class Compiler {
 	
 	public function addHook($when, $prepost, $where, $hook) {
 		$name = 'hook' . ucfirst(strtolower($prepost)) . ucfirst(strtolower($where));
-		$this->$name[$when][] = $hook;
+		$this->{$name}[$when][] = $hook;
 		return $this;
 	}
 
