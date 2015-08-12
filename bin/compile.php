@@ -84,34 +84,40 @@ HELP;
  * @param string $name option to look for
  * @return string|null
  */
-$check = function() use (&$neon) {
+$check = function() use (&$neon, $argv) {
 	// test the options
 	$name = implode('-', func_get_args());
-	$opt = getopt(null, [$name . ':']);
+	$ret = false;
+	$def = function($config, $args) use (&$def) {
+		$name = array_shift($args);
+		$ret = false;
+
+		if(isset($config[$name])) {
+			if(empty($args))
+				$ret = $config[$name];
+			else
+				$ret = $def($config[$name], $args);
+		}
+
+		return $ret;
+	};
 	
+	// found in command line
+	if(in_array('--' . $name, $argv)) {
+		$ret = true;
+		$key = array_search('--'. $name, $argv) + 1;
+		
+		if(isset($argv[$key]) && substr($argv[$key], 0, 2) !== '--')
+			$ret = $argv[$key];
+	}
+
 	// check config file
-	if(!isset($opt[$name])) {
-		$def = function($config, $args) use (&$def) {
-			$name = array_shift($args);
-			$ret = false;
-
-			if(isset($config[$name])) {
-				if(empty($args))
-					$ret = $config[$name];
-				else
-					$ret = $def($config[$name], $args);
-			}
-
-			return $ret;
-		};
-
+	if(!$ret)
 		$ret = $def($neon, func_get_args());
-	} else // found in command line
-		$ret = $opt[$name];
-
+	
 	return $ret;
 };
-
+	
 // no errors wanted
 set_time_limit(0);
 date_default_timezone_set('UTC');
