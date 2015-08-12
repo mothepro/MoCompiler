@@ -132,10 +132,15 @@ class Compiler {
 	private $wipe = array();
 	
 	/**
-	 * Output reports
-	 * @var boolean
+	 * Verbose Level
+	 * 0 Silent
+	 * 1 Name of Job
+	 * 2 Duration of Job
+	 * 3 Commands run in command line
+	 * 
+	 * @var int
 	 */
-	private $silent = false;
+	private $verbose = 2;
 
 	/**
 	 * Compress and minify static files
@@ -167,7 +172,7 @@ class Compiler {
 		$this->status->push(microtime(true));
 
 
-		if (!$this->silent)
+		if ($this->verbose >= 1)
 			echo PHP_EOL, str_repeat("\t", $this->status->count() - 1), $message, '... ';
 
 
@@ -182,7 +187,7 @@ class Compiler {
 		$end = microtime(true);
 
 
-		if (!$this->silent)
+		if ($this->verbose >= 2)
 			echo PHP_EOL, str_repeat("\t", $this->status->count()), ' > ', number_format($end - $begin, 4), ' seconds';
 
 
@@ -323,6 +328,7 @@ class Compiler {
 
 		$this->localTpl = rtrim($this->localTpl, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
 		$this->wipe[] = $output = self::path(sys_get_temp_dir()) . 'twigjs' . time() . DIRECTORY_SEPARATOR;
+		self::readyDir($output);
 		
 		$data = array();
 		
@@ -331,8 +337,7 @@ class Compiler {
 			$data[ $id ] = file_get_contents($file);
 		}
 		
-		self::readyDir($output . $file);
-		file_put_contents($output . $file . '.js', 'var templates = '. json_encode($data) .';');
+		file_put_contents($output . 'tpl.js', 'var templates = '. json_encode($data) .';');
 
 		$this->finish();
 
@@ -588,8 +593,8 @@ class Compiler {
 
 
 		// run
-		if($this->silent === 2)
-			echo "\n`$command`\n";
+		if ($this->verbose >= 3)
+			echo "\n$ $command\n";
 		passthru($command);
 
 
@@ -792,8 +797,8 @@ class Compiler {
 		$this->host = $host;
 		return $this;
 	}
-	public function setSilent($silent) {
-		$this->silent = $silent;
+	public function setVerbose($v) {
+		$this->verbose = $v;
 		return $this;
 	}
 
