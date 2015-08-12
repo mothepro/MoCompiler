@@ -52,7 +52,7 @@ Mo's PHP Project Compiler!
 		--apigen			Documentation Configuration
 
 		--compress			Compress static files
-		--quiet				Silent mode
+		--verbose			Level to output
 
 		--upload-sass		Local SASS Directory
 		--upload-js			Local JS Directory
@@ -158,7 +158,7 @@ $c	->setHost($check('host'))
 
 // misc
 $c->setCompress($check('compress'));
-$c->setSilent($check('silent'));
+$c->setVerbose($check('verbose'));
 
 // add directories
 if($check('project', 'files'))
@@ -185,12 +185,13 @@ if($check('apigen'))			$c->setLocalDoc($check('apigen'));
 
 // hooks
 if($check('hooks'))
-	foreach($check('hooks') as $where => $more)
-		foreach($more as $when => $cmds) {
-			if(is_array($cmds))
-				foreach($cmds as $cmd)
-					$c->addHook($where, $when, $cmd);
-		}
+	foreach($check('hooks') as $when => $more)
+		foreach($more as $prepost => $moree)
+			foreach($moree as $where => $cmds) {
+				if(is_array($cmds))
+					foreach($cmds as $cmd)
+						$c->addHook($when, $prepost, $where, $cmd);
+			}
 
 // S3
 if($check('s3', 'key') && $check('s3', 'key'))

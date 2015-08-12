@@ -26,7 +26,11 @@ project:
 	--apigen			Documentation Configuration
 
 	--compress			Compress static files
-	--quiet				Silent mode
+	--verbose			Level to output
+						0 = Silent
+						1 = Name of Job
+						2 = Duration of Job
+						3 = Commands run in command line
 
 	--upload-sass		Local SASS Directory
 	--upload-js			Local JS Directory
