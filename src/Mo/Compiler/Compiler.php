@@ -161,6 +161,150 @@ class Compiler {
 	 * r.js build config path
 	 */
 	const RJS_BUILD = 'build.js';
+	
+	/**
+	 * Extentions => Mime Types
+	 * 
+	 * @link http://www.phpclasses.org/browse/file/2743.html
+	 * @var string[]
+	 */
+	protected static $mimes = [
+		'ez' => 'application/andrew-inset', 
+		'hqx' => 'application/mac-binhex40', 
+		'cpt' => 'application/mac-compactpro', 
+		'doc' => 'application/msword', 
+		'bin' => 'application/octet-stream', 
+		'dms' => 'application/octet-stream', 
+		'lha' => 'application/octet-stream', 
+		'lzh' => 'application/octet-stream', 
+		'exe' => 'application/octet-stream', 
+		'class' => 'application/octet-stream', 
+		'so' => 'application/octet-stream', 
+		'dll' => 'application/octet-stream', 
+		'oda' => 'application/oda', 
+		'pdf' => 'application/pdf', 
+		'ai' => 'application/postscript', 
+		'eps' => 'application/postscript', 
+		'ps' => 'application/postscript', 
+		'smi' => 'application/smil', 
+		'smil' => 'application/smil', 
+		'wbxml' => 'application/vnd.wap.wbxml', 
+		'wmlc' => 'application/vnd.wap.wmlc', 
+		'wmlsc' => 'application/vnd.wap.wmlscriptc', 
+		'bcpio' => 'application/x-bcpio', 
+		'vcd' => 'application/x-cdlink', 
+		'pgn' => 'application/x-chess-pgn', 
+		'cpio' => 'application/x-cpio', 
+		'csh' => 'application/x-csh', 
+		'dcr' => 'application/x-director', 
+		'dir' => 'application/x-director', 
+		'dxr' => 'application/x-director', 
+		'dvi' => 'application/x-dvi', 
+		'spl' => 'application/x-futuresplash', 
+		'gtar' => 'application/x-gtar', 
+		'hdf' => 'application/x-hdf', 
+		'js' => 'application/javascript', 
+		'skp' => 'application/x-koan', 
+		'skd' => 'application/x-koan', 
+		'skt' => 'application/x-koan', 
+		'skm' => 'application/x-koan', 
+		'latex' => 'application/x-latex', 
+		'nc' => 'application/x-netcdf', 
+		'cdf' => 'application/x-netcdf', 
+		'sh' => 'application/x-sh', 
+		'shar' => 'application/x-shar', 
+		'swf' => 'application/x-shockwave-flash', 
+		'sit' => 'application/x-stuffit', 
+		'sv4cpio' => 'application/x-sv4cpio', 
+		'sv4crc' => 'application/x-sv4crc', 
+		'tar' => 'application/x-tar', 
+		'tcl' => 'application/x-tcl', 
+		'tex' => 'application/x-tex', 
+		'texinfo' => 'application/x-texinfo', 
+		'texi' => 'application/x-texinfo', 
+		't' => 'application/x-troff', 
+		'tr' => 'application/x-troff', 
+		'roff' => 'application/x-troff', 
+		'man' => 'application/x-troff-man', 
+		'me' => 'application/x-troff-me', 
+		'ms' => 'application/x-troff-ms', 
+		'ustar' => 'application/x-ustar', 
+		'src' => 'application/x-wais-source', 
+		'xhtml' => 'application/xhtml+xml', 
+		'xht' => 'application/xhtml+xml', 
+		'zip' => 'application/zip', 
+		'au' => 'audio/basic', 
+		'snd' => 'audio/basic', 
+		'mid' => 'audio/midi', 
+		'midi' => 'audio/midi', 
+		'kar' => 'audio/midi', 
+		'mpga' => 'audio/mpeg', 
+		'mp2' => 'audio/mpeg', 
+		'mp3' => 'audio/mpeg', 
+		'aif' => 'audio/x-aiff', 
+		'aiff' => 'audio/x-aiff', 
+		'aifc' => 'audio/x-aiff', 
+		'm3u' => 'audio/x-mpegurl', 
+		'ram' => 'audio/x-pn-realaudio', 
+		'rm' => 'audio/x-pn-realaudio', 
+		'rpm' => 'audio/x-pn-realaudio-plugin', 
+		'ra' => 'audio/x-realaudio', 
+		'wav' => 'audio/x-wav', 
+		'pdb' => 'chemical/x-pdb', 
+		'xyz' => 'chemical/x-xyz', 
+		'bmp' => 'image/bmp', 
+		'gif' => 'image/gif', 
+		'ief' => 'image/ief', 
+		'jpeg' => 'image/jpeg', 
+		'jpg' => 'image/jpeg', 
+		'jpe' => 'image/jpeg', 
+		'png' => 'image/png', 
+		'tiff' => 'image/tiff', 
+		'tif' => 'image/tif', 
+		'djvu' => 'image/vnd.djvu', 
+		'djv' => 'image/vnd.djvu', 
+		'wbmp' => 'image/vnd.wap.wbmp', 
+		'ras' => 'image/x-cmu-raster', 
+		'pnm' => 'image/x-portable-anymap', 
+		'pbm' => 'image/x-portable-bitmap', 
+		'pgm' => 'image/x-portable-graymap', 
+		'ppm' => 'image/x-portable-pixmap', 
+		'rgb' => 'image/x-rgb', 
+		'xbm' => 'image/x-xbitmap', 
+		'xpm' => 'image/x-xpixmap', 
+		'xwd' => 'image/x-windowdump', 
+		'igs' => 'model/iges', 
+		'iges' => 'model/iges', 
+		'msh' => 'model/mesh', 
+		'mesh' => 'model/mesh', 
+		'silo' => 'model/mesh', 
+		'wrl' => 'model/vrml', 
+		'vrml' => 'model/vrml', 
+		'css' => 'text/css', 
+		'html' => 'text/html', 
+		'htm' => 'text/html', 
+		'asc' => 'text/plain', 
+		'txt' => 'text/plain', 
+		'rtx' => 'text/richtext', 
+		'rtf' => 'text/rtf', 
+		'sgml' => 'text/sgml', 
+		'sgm' => 'text/sgml', 
+		'tsv' => 'text/tab-seperated-values', 
+		'wml' => 'text/vnd.wap.wml', 
+		'wmls' => 'text/vnd.wap.wmlscript', 
+		'etx' => 'text/x-setext', 
+		'xml' => 'text/xml', 
+		'xsl' => 'text/xml', 
+		'mpeg' => 'video/mpeg', 
+		'mpg' => 'video/mpeg', 
+		'mpe' => 'video/mpeg', 
+		'qt' => 'video/quicktime', 
+		'mov' => 'video/quicktime', 
+		'mxu' => 'video/vnd.mpegurl', 
+		'avi' => 'video/x-msvideo', 
+		'movie' => 'video/x-sgi-movie', 
+		'ice' => 'x-conference-xcooltalk' 
+	];
 	// </editor-fold>
 
 	// <editor-fold defaultstate="collapsed" desc="Reporting">
@@ -245,7 +389,10 @@ class Compiler {
 	 * @return type
 	 */
 	protected final static function path($name) {
-		return rtrim(realpath($name), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+		$dir = rtrim(realpath($name), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+		if(!is_file($dir))
+			$dir = null;
+		return $dir;
 	}
 
 
@@ -639,8 +786,7 @@ class Compiler {
 	 */
 	protected function uploadStatic() {
 		// copy to all destination folders
-		foreach($this->remoteStatic as $type => $destDir) {
-			
+		foreach($this->remoteStatic as $type => $destDir) {			
 			// copy from all static
 			if(isset($this->s3)) {
 				foreach(self::rglob($this->tmp[ $type ] . '*') as $file) {
@@ -648,9 +794,9 @@ class Compiler {
 					$this->start('Putting '. $info->getBasename() .' on '. $destDir);
 					
 					// get mime
-					$finfo = finfo_open(FILEINFO_MIME_TYPE);
-					$mime = finfo_file($finfo, $file);
-					finfo_close($finfo);
+					$mime = 'text/plain'; // 'application/octet-stream';
+					if(isset(static::$mimes[ $info->getExtension() ]))
+						$mime = static::$mimes[ $info->getExtension() ];
 					
 					// headers
 					$headers = [
@@ -658,7 +804,6 @@ class Compiler {
 						'Cache-Control'		=> 'max-age=315360000',
 						'Expires'			=> 'Thu, 31 Dec 2037 23:55:55 GMT', //gmdate(DateTime::RFC1123, strtotime('+5 years'))
 						'Vary'				=> 'Accept-Encoding',
-						'Content-Length'	=> mb_strlen($data, '8bit'),
 					];
 					
 					$data = file_get_contents($file);
@@ -666,11 +811,16 @@ class Compiler {
 					// gzip
 					if(substr($mime, 0, 5) === 'text/'
 					|| $mime === 'application/javascript'
+					|| $mime === 'application/x-javascript'
 					|| $mime === 'application/json') {
 						$data = gzencode($data, 9);
 						$headers['Content-Encoding'] = 'gzip';
 					}
-
+					
+					// data length
+					$headers['Content-Length'] = mb_strlen($data, '8bit');
+					
+					// push it
 					$this->s3->putObject(
 						$data,
 						$destDir,
@@ -737,8 +887,14 @@ class Compiler {
 				// process static files
 				$this->start('Processing '. $type)->$type()->finish();
 				
-			} else // just moved the folder
-				$this->tmp[ $type ] = self::path(current ($this->localStatic[ $type ]));
+			} elseif(!empty($this->localStatic[ $type ])) {
+					// just moved the folder
+					$this->tmp[ $type ] = self::path(current ($this->localStatic[ $type ]));
+					
+					// remove if not there
+					if(empty($this->tmp[ $type ])) 
+						unset ($this->remoteStatic[ $type ]);
+			}
 		}
 
 		// run through static files then upload them
