@@ -172,31 +172,10 @@ class Compiler {
 		if (!isset($this->status))
 			$this->status = new \SplStack;
 
-
 		$this->status->push(microtime(true));
 		
-		if($hook) {
-			// look for local commands
-			foreach($this->hookPreLocal as $name => $cmds) {
-				if(stripos($message, $name) !== false) { // these are the hooks to run
-					$this->start('Before ' . $message, false);
-					foreach ($cmds as $cmd)
-						$this->runLocal ($cmd);
-					$this->finish(false);
-				}
-			}
-			
-			// look for remote commands
-			foreach($this->hookPreRemote as $name => $cmds) {
-				if(stripos($message, $name) !== false) { // these are the hooks to run
-					$this->start('Before ' . $message, false);
-					foreach ($cmds as $cmd)
-						$this->runRemote($cmd);
-					$this->finish(false);
-				}
-			}
-		}
-
+		if($hook)
+			$this->applyHooks ('Pre', $message);
 
 		if ($this->verbose >= 1)
 			echo PHP_EOL, str_repeat("\t", $this->status->count() - 1), $message, '... ';
@@ -212,33 +191,33 @@ class Compiler {
 		$begin = $this->status->pop();
 		$end = microtime(true);
 		
-		if($hook) {
-			// look for local commands
-			foreach($this->hookPostLocal as $name => $cmds) {
-				if(stripos($message, $name) !== false) { // these are the hooks to run
-					$this->start('After ' . $message, false);
-					foreach ($cmds as $cmd)
-						$this->runLocal ($cmd);
-					$this->finish(false);
-				}
-			}
-			
-			// look for remote commands
-			foreach($this->hookPostRemote as $name => $cmds) {
-				if(stripos($message, $name) !== false) { // these are the hooks to run
-					$this->start('After ' . $message, false);
-					foreach ($cmds as $cmd)
-						$this->runRemote($cmd);
-					$this->finish(false);
-				}
-			}
-		}
+		if($hook)
+			$this->applyHooks ('Post', $message);
 		
 		if ($this->verbose >= 2)
 			echo PHP_EOL, str_repeat("\t", $this->status->count()), ' > ', number_format($end - $begin, 4), ' seconds';
 
 
 		return $this;
+	}
+
+	private function applyHooks($prepost, $message) {
+		// where to run them
+		foreach(['Local', 'Remote'] as $where) {
+			$name = 'hook'. $prepost . $where;
+			
+			// list of hooks for this time
+			foreach($this->$name as $name => $cmds) {
+				
+				// MATCH - these are the hooks to run
+				if(stripos($message, $name) !== false) {
+					$this->start('After ' . $message, false);
+					foreach ($cmds as $cmd)
+						$this->runLocal ($cmd);
+					$this->finish(false);
+				}
+			}
+		}
 	}
 
 // </editor-fold>
