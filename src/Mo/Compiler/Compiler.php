@@ -171,11 +171,11 @@ class Compiler {
 	private function start($message, $hook = true) {
 		if (!isset($this->status))
 			$this->status = new \SplStack;
-
-		$this->status->push(microtime(true));
 		
 		if($hook)
 			$this->applyHooks ('Pre', $message);
+		
+		$this->status->push(microtime(true));
 
 		if ($this->verbose >= 1)
 			echo PHP_EOL, str_repeat("\t", $this->status->count() - 1), $message, '... ';
@@ -191,12 +191,11 @@ class Compiler {
 		$begin = $this->status->pop();
 		$end = microtime(true);
 		
-		if($hook)
-			$this->applyHooks ('Post', $message);
-		
 		if ($this->verbose >= 2)
 			echo PHP_EOL, str_repeat("\t", $this->status->count()), ' > ', number_format($end - $begin, 4), ' seconds';
 
+		if($hook)
+			$this->applyHooks ('Post', $message);
 
 		return $this;
 	}
@@ -350,8 +349,6 @@ class Compiler {
 	 * Makes JS files in current directory then moves them to static JS
 	 */
 	private function makeTpl() {
-		$this->start('Creating JS Templates from ' . $this->localTpl);
-
 		$this->localTpl = rtrim($this->localTpl, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
 		$this->wipe[] = $output = self::path(sys_get_temp_dir()) . 'twigjs' . time() . DIRECTORY_SEPARATOR;
 		self::readyDir($output);
@@ -365,10 +362,10 @@ class Compiler {
 		
 		file_put_contents($output . 'tpl.js', 'var templates = '. json_encode($data) .';');
 
-		$this->finish();
-
 		$this->addLocalStatic('js', $output);
 		//$this->addCopy($this->localTpl);
+		
+		return $this;
 	}
 
 
@@ -387,12 +384,10 @@ class Compiler {
 		$this->wipe[] = $dest;
 
 
-		$this->start('Creating Documentation from ' . $this->localDoc)
-				->runLocal([self::BIN . 'apigen.bat',
+		return $this->runLocal([self::BIN . 'apigen.bat',
 					'generate',
 					'--config', $this->localDoc,
-				])
-				->finish();
+				]);
 	}
 
 // </editor-fold>
@@ -462,6 +457,8 @@ class Compiler {
 
 			$this->finish();
 		}
+		
+		return $this;
 	}
 
 
@@ -542,6 +539,8 @@ class Compiler {
 				}
 			}
 		}
+		
+		return $this;
 	}
 
 
@@ -579,6 +578,8 @@ class Compiler {
 					copy($image, $output); // symlink
 			}
 		}
+		
+		return $this;
 	}
 
 	// </editor-fold>
@@ -712,11 +713,11 @@ class Compiler {
 		
 		// documentation
 		if(isset($this->localDoc))
-			$this->makeDoc();
+			$this->start('Creating Documentation from ' . $this->localDoc)->makeDoc()->finish();
 		
 		// twig templates
 		if(isset($this->localTpl))
-			$this->makeTpl();
+			$this->start('Creating JS Templates from ' . $this->localTpl)->makeTpl()->finish();
 		
 		
 		// static files
@@ -729,7 +730,7 @@ class Compiler {
 				self::readyDir( $this->tmp[ $type ] );
 
 				// process static files
-				$this->$type();
+				$this->start('Processing '. $type)->$type()->finish();
 				
 			} else // just moved the folder
 				$this->tmp[ $type ] = self::path(current ($this->localStatic[ $type ]));
