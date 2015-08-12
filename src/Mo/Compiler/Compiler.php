@@ -405,13 +405,15 @@ class Compiler {
 		foreach ($this->localStatic[ __FUNCTION__ ] as $dir) {
 			$this->start('Converting SASS to CSS in ' . $dir);
 
-			foreach (glob($dir . DIRECTORY_SEPARATOR . '*.scss') as $file) {
+			foreach (glob($dir . DIRECTORY_SEPARATOR . '*.{scss,sass}') as $file) {
 				//skip if partial
 				$output = basename($file);
 				if (substr($output, 0, 1) === '_')
 					continue;
 
 				$this->start('Working on ' . $output);
+				
+				$scss = (substr($file, -5) === '.scss');
 				
 				// Add Constants variables 
 				if(isset($GLOBALS["constants"])) {
@@ -441,7 +443,7 @@ class Compiler {
 
 				// run sass
 				$this->runLocal(['sass',
-					'--scss',
+					($scss ? '--scss' : null),
 					'--trace',
 					'--unix-newlines',
 					
