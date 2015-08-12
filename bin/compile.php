@@ -39,39 +39,38 @@ Mo's PHP Project Compiler!
 	-h		--help	Print this help message.
 
 	Required Options
-		-c						Configuration file to use
-		-s	--host				Host name of server to compile to
-		-p	--ppk				Location of PPK file to connect to server
-		-d	--project-remote	Remote Directory to upload project
+		-c					Configuration file to use
+		--host				Host name of server to compile to
+		--ppk				Location of PPK file to connect to server
+		--project-remote	Remote Directory to upload project
 
 	Optional Options
-	
-		-l	--project-local		Local Directory to load project [Working Directory]
-			--project-files		Directories to move from local to remote
+		--project-local		Local Directory to load project [Working Directory]
+		--project-files		Directories to move from local to remote
 
-			--twig				Twig Template Directory
-			--apigen			Documentation Configuration
+		--twig				Twig Template Directory
+		--apigen			Documentation Configuration
 
-			--compress			Compress static files
-			--quiet				Silent mode
+		--compress			Compress static files
+		--quiet				Silent mode
 
-			--upload-sass		Local SASS Directory
-			--upload-js			Local JS Directory
-			--upload-img		Local Image Directory
-			--upload-*			Local Static Directory
+		--upload-sass		Local SASS Directory
+		--upload-js			Local JS Directory
+		--upload-img		Local Image Directory
+		--upload-*			Local Static Directory
 
-			--s3-key			Amazon S3 Access Key Activates compression
-			--s3-secret			Amazon S3 Secret Key
+		--s3-key			Amazon S3 Access Key Activates compression
+		--s3-secret			Amazon S3 Secret Key
 
-			--download-sass		Remote Directory to save sass on server or S3
-			--download-js		Remote Directory to save js on server or S3
-			--download-img		Remote Directory to save images on server or 
-			--download-*		Remote Static Directory to match --local-*
-	
-			--hooks-post		Remote Commands to run after uploading
-	
-			--constants			List of constants used throughout app
-			--constantsOutput	Where to save new constants
+		--download-sass		Remote Directory to save sass on server or S3
+		--download-js		Remote Directory to save js on server or S3
+		--download-img		Remote Directory to save images on server or 
+		--download-*		Remote Static Directory to match --local-*
+
+		--hooks-post		Remote Commands to run after uploading
+
+		--constants			List of constants used throughout app
+		--constantsOutput	Where to save new constants
 HELP;
 };
 
@@ -83,38 +82,31 @@ HELP;
  * @return string|null
  */
 $check = function() use (&$neon) {
-	$def = function($config, $args) use (&$def) {
-		$name = array_shift($args);
-		$ret = false;
-		
-		if(isset($config[$name])) {
-			if(empty($args))
-				$ret = $config[$name];
-			else
-				$ret = $def($config[$name], $args);
-		}
-		
-		return $ret;
-	};
+	// test the options
+	$name = implode('-', func_get_args());
+	$opt = getopt(null, [$name . ':']);
 	
-	return $def($neon, func_get_args());
-};
+	// check config file
+	if(!isset($opt[$name])) {
+		$def = function($config, $args) use (&$def) {
+			$name = array_shift($args);
+			$ret = false;
 
-/**
- * Replaces config with command line options recursively
- * 
- * @param mixed[] $origin config array
- * @param string $name name
- * @param mixed $newValue value
- */
-$replace = function($name, $newValue) use(&$neon, &$replace) {
-	$names = explode('-', $name);
-	$curr = array_shift($names);
-	
-	if(empty($names))
-		$neon[ $curr ] = $newValue;
-	else
-		$replace($neon[$curr], implode('-', $names), $newValue);
+			if(isset($config[$name])) {
+				if(empty($args))
+					$ret = $config[$name];
+				else
+					$ret = $def($config[$name], $args);
+			}
+
+			return $ret;
+		};
+
+		$ret = $def($neon, func_get_args());
+	} else // found in command line
+		$ret = $opt[$name];
+
+	return $ret;
 };
 
 // no errors wanted
@@ -125,51 +117,16 @@ $error = true;
 	
 // options
 $neon = null;
-$opt = getopt('c:s:p:l:d:h', [
-	'help',
-	
-	'host',
-	'ppk',
-	'project-remote',
-
-	'compress',
-	'quiet',
-
-	'upload:',
-	'twig:',
-	'apigen:',
-	'local-sass:',
-	'local-js:',
-	'local-img:',
-	's3-key:',
-	's3-secret:',
-	'remote-sass:',
-	'remote-js:',
-	'remote-img:',
-]);
+$opt = getopt('c:h', ['help']);
 
 // not missing neon or config
 if(isset($opt['c'])) {
 	$data = file_get_contents($opt['c']);
 	$neon = \Nette\Neon\Neon::decode($data);
 	
+	// root
 	if(isset($neon['compiler']))
 		$neon = $neon['compiler'];
-	
-	// move legacy cmd line options
-	if(isset($opt['s']))	$replace('host', $opt['s']);
-	if(isset($opt['p']))	$replace('ppk', $opt['p']);
-	if(isset($opt['d']))	$replace('project-remote', $opt['d']);
-	if(isset($opt['l']))	$replace('project-local', $opt['l']);
-
-	// overwrite neon with cmd line opts
-	if(!is_array($neon))
-		$neon = array();
-
-	// replace $neon[ $name ] with $val
-	unset($opt['c']);
-	foreach($opt as $name => $val)
-		$replace($neon, $name, $val);
 
 	//  check errors
 	$error = !($check('ppk') && $check('project', 'remote') && $check('host'));
