@@ -770,10 +770,11 @@ class Compiler {
 
 
 		// run
-		if ($this->verbose >= 3)
+		if ($this->verbose >= 3) {
 			echo "\n$ $command\n";
-		passthru($command);
-
+			passthru($command);
+		} else
+			exec($command);
 
 		return $this;
 	}
