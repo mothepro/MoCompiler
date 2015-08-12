@@ -71,6 +71,9 @@ Mo's PHP Project Compiler!
 
 		--constants			List of constants used throughout app
 		--constantsOutput	Where to save new constants
+	
+Options are useful if you want to hide some config settings to your build process.
+	```--s3-secret ImNotGoingOnTheVCS```
 HELP;
 };
 
