@@ -891,7 +891,7 @@ class Compiler {
 					$this->tmp[ $type ] = self::path(current ($this->localStatic[ $type ]));
 					
 					// remove if not there
-					if(!is_file($this->tmp[ $type ])) 
+					if(!file_exists($this->tmp[ $type ])) 
 						unset ($this->remoteStatic[ $type ]);
 			}
 		}
