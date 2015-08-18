@@ -790,6 +790,10 @@ class Compiler {
 			if(isset($this->s3)) {
 				foreach(self::rglob($this->tmp[ $type ] . '*') as $file) {
 					$info = new \SplFileInfo($file);
+					
+					if($info->isDir() || !$info->isReadable())
+						continue;
+					
 					$this->start('Putting '. $info->getBasename() .' on '. $destDir);
 					
 					// get mime
