@@ -355,11 +355,16 @@ class Compiler {
 			// list of hooks for this time
 			foreach($this->$name as $name => $cmds) {
 				
+				// should use regex test?
 				// MATCH - these are the hooks to run
 				if(stripos($message, $name) !== false) {
 					$this->start(($prepost === 'Pre' ? 'Before' : 'After') .' '. $message, false);
-					foreach ($cmds as $cmd)
-						$this->runLocal ($cmd);
+					foreach ($cmds as $cmd) {
+						if($where === 'Local')
+							$this->runLocal ($cmd);
+						elseif($where === 'Remote')
+							$this->runRemote ($cmd);
+					}
 					$this->finish(false);
 				}
 			}
