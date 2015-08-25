@@ -134,8 +134,12 @@ class Constants {
 	public function write($location, $requireAutoloader = false) {
 		$str = array('<?php');
 		
-		if($requireAutoloader)
+		if($requireAutoloader) {
 			$str[] = self::AUTOLOAD;
+			
+			if(class_exists('\Propel\Runtime\Propel'))
+				$str[] = 'require "generated-conf/config.php";';
+		}
 		
 		foreach($this->const as $name => $val)
 			$str[] = 'define("'. self::nameEncode($name, self::NAMESPACE_SEPERATOR) .'", '. self::encode($val) .');';
