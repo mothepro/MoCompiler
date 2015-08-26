@@ -48,11 +48,14 @@ class Constants {
 	 * @var string[]
 	 */
 	private $ini = array();
-
+	
 	/**
-	 * Autoloading in PHP
+	 *
+	 * @var string[]
 	 */
-	const AUTOLOAD = 'require "vendor/autoload.php";';
+	private $require = array(
+		'vendor/autoload.php'
+	);
 
 	/**
 	 * Namespace Seperator in PHP
@@ -73,6 +76,11 @@ class Constants {
 		if(isset($const['ini'])) {
 			$this->ini = self::nameVals($const['ini']);
 			unset($const['ini']);
+		}
+		
+		if(isset($const['require'])) {
+			$this->require = $const['require'];
+			unset($const['require']);
 		}
 		
 		$this->const = self::nameVals($const);
@@ -131,15 +139,8 @@ class Constants {
 		return $this->class;
 	}
 	
-	public function write($location, $requireAutoloader = false) {
+	public function write($location) {
 		$str = array('<?php');
-		
-		if($requireAutoloader) {
-			$str[] = self::AUTOLOAD;
-			
-			if(class_exists('\Propel\Runtime\Propel'))
-				$str[] = 'require "generated-conf/config.php";';
-		}
 		
 		foreach($this->const as $name => $val)
 			$str[] = 'define("'. self::nameEncode($name, self::NAMESPACE_SEPERATOR) .'", '. self::encode($val) .');';
@@ -152,6 +153,9 @@ class Constants {
 		foreach($this->public as $k => $v)
 			$tmp[ self::nameEncode ($k, self::NAMESPACE_SEPERATOR) ] = $v;
 		$this->public = $tmp;
+		
+		foreach($this->require as $file)
+			$str[] = 'require "'. $file .'";';
 		
 		// how should I do this?
 		$str[] = '$GLOBALS["constants"] = '. var_export($this->public, true) .';';
