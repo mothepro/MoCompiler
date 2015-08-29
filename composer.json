@@ -16,8 +16,8 @@
 		"nette/neon":						"*"
 	},
 	"autoload": {
-		"psr-0": {
-			"Mo": "src/"
+		"psr-4": {
+			"Mo\\Compiler\\": "src/"
 		}
 	},
 	"bin": [
