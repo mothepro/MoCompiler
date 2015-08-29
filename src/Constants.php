@@ -163,6 +163,24 @@ class Constants {
 		return file_put_contents($location, implode(PHP_EOL, $str));
 	}
 	
+	/**
+	 * Adds the constants for the current app
+	 * @param boolean $require Whether to require the files
+	 */
+	public function run($require = false) {
+		foreach($this->const as $name => $val)
+			define(self::nameEncode($name, self::NAMESPACE_SEPERATOR), self::encode($val) );
+		
+		foreach($this->ini as $name => $val)
+			ini_set(self::nameEncode($name, self::INI_SEPERATOR), self::encode($val) );
+		
+		$GLOBALS["constants"] = $this->public;
+		
+		if($require)
+			foreach($this->require as $file)
+				require $file;
+	}
+	
 	protected static function encode($val) {
 		$ret = var_export($val, true);
 				
